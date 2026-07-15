@@ -9,7 +9,7 @@
     favorites: [],           // ordered entity_ids
     sortMode: 'smart',       // 'smart' | 'name' | 'status'
     showDiagnostics: false,  // include config/diagnostic entities
-    theme: 'dark',           // 'dark' | 'light'
+    theme: 'light',          // 'dark' | 'light'
     lastScreen: null         // { name, params } for restore
   };
 

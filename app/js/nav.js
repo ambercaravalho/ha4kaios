@@ -55,6 +55,50 @@
     };
   }
 
+  /* Marquee: iPod-style back-and-forth scroll of overflowing text on the
+     focused item. Opt in by adding the "marquee" class to a clipping element
+     (overflow:hidden; white-space:nowrap). Driven with text-indent transitions
+     to stay ES5/Gecko-48 safe. Only one item marquees at a time (the focused
+     one); starting a new one stops any previous animations. */
+  var marqueeAnims = [];
+
+  function stopMarquee() {
+    for (var i = 0; i < marqueeAnims.length; i++) {
+      var a = marqueeAnims[i];
+      if (a.timer) clearTimeout(a.timer);
+      a.el.style.transition = '';
+      a.el.style.textIndent = '';
+      a.el.style.textOverflow = '';
+    }
+    marqueeAnims = [];
+  }
+
+  function startMarquee(item) {
+    stopMarquee();
+    if (!item || !item.getElementsByClassName) return;
+    var targets = item.getElementsByClassName('marquee');
+    for (var i = 0; i < targets.length; i++) setupMarquee(targets[i]);
+  }
+
+  function setupMarquee(el) {
+    var overflow = el.scrollWidth - el.clientWidth;
+    if (overflow <= 4) return; // fits (or nearly): leave it static
+    var shift = overflow + 8;  // reveal the tail with a little trailing pad
+    var dur = Math.max(700, Math.round(shift / 55 * 1000)); // ~55px/sec
+    var pause = 1000;          // dwell at each end
+    var anim = { el: el, timer: null, atEnd: false };
+    el.style.textOverflow = 'clip'; // hide the resting ellipsis while moving
+    el.style.textIndent = '0px';
+    function step() {
+      anim.atEnd = !anim.atEnd;
+      el.style.transition = 'text-indent ' + dur + 'ms linear';
+      el.style.textIndent = anim.atEnd ? (-shift + 'px') : '0px';
+      anim.timer = setTimeout(step, dur + pause);
+    }
+    anim.timer = setTimeout(step, pause);
+    marqueeAnims.push(anim);
+  }
+
   /* FocusList: manage a moving focus among a set of item elements inside a
      scroll container. Items are matched by CSS class name. */
   function FocusList(container, itemClass) {
@@ -90,6 +134,7 @@
     if (el && el.scrollIntoView) {
       el.scrollIntoView(false);
     }
+    startMarquee(el);
   };
 
   FocusList.prototype.move = function (delta) {
@@ -119,6 +164,7 @@
   global.HANav = {
     normalizeKey: normalizeKey,
     attach: attach,
-    FocusList: FocusList
+    FocusList: FocusList,
+    stopMarquee: stopMarquee
   };
 })(window);

@@ -24,7 +24,7 @@
 
       section('Preferences');
       addRow('Sort order', SORT_LABELS[HAStore.getPref('sortMode', 'smart')], 'sort');
-      addRow('Theme', HAStore.getPref('theme', 'dark') === 'light' ? 'Light' : 'Dark', 'theme');
+      addRow('Theme', HAStore.getPref('theme', 'light') === 'light' ? 'Light' : 'Dark', 'theme');
       addRow('Show diagnostics', HAStore.getPref('showDiagnostics', false) ? 'On' : 'Off', 'diag');
 
       section('Connection');

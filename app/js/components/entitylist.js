@@ -245,7 +245,7 @@
       var main = document.createElement('div');
       main.className = 'row-main';
       var name = document.createElement('span');
-      name.className = 'row-name';
+      name.className = 'row-name marquee';
       name.textContent = e ? HAFmt.friendlyName(e) : id;
       var sub = document.createElement('span');
       sub.className = 'row-sub';
@@ -277,7 +277,7 @@
       var main = document.createElement('div');
       main.className = 'row-main';
       var name = document.createElement('span');
-      name.className = 'row-name';
+      name.className = 'row-name marquee';
       name.textContent = deviceLabel(item);
       var sub = document.createElement('span');
       sub.className = 'row-sub';

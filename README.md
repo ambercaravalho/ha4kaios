@@ -39,30 +39,6 @@ Install `build/application.zip` (or the `app/` folder) on your device or the sim
 then launch **HA4KaiOS**, enter your URL, scan or paste the token, and press
 **Connect**. Full steps: [Packaging & install](docs/packaging-and-install.md).
 
-## Controls
-
-The D-pad moves the selection, Center acts on it (toggle / activate / open), and
-the two softkeys are labelled per screen. Back returns to the previous screen;
-Home is the root, so Back there never exits by accident. See the
-[UI guide](docs/ui.md#controls) for the full key reference, screens, sorting,
-favorites, and search.
-
-## Project layout
-
-```
-app/                # everything that ships in the packaged app
-  manifest.webapp   # privileged manifest (systemXHR + video-capture, icons, CSP)
-  index.html        # app shell (external CSS/JS only)
-  css/app.css       # small-screen styles + dark/light themes
-  js/               # config, store, xhr, ha-client, format, nav, qr, domains, app
-  js/components/    # reusable entity list + menu overlay
-  js/views/         # one file per screen (setup, home, lists, detail, settings)
-  js/vendor/        # jsQR (vendored QR decoder)
-  icons/            # 56 / 112 px app icons
-docs/               # wiki (deep-dive documentation)
-build/              # build.sh + generated application.zip
-```
-
 ## Documentation
 
 Deep-dive guides live in the [docs wiki](docs/README.md): architecture, UI,

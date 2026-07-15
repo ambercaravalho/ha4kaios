@@ -81,7 +81,7 @@
 
   /* ---- theme ---- */
   function applyTheme() {
-    var t = HAStore.getPref('theme', 'dark');
+    var t = HAStore.getPref('theme', 'light');
     document.body.className = (t === 'light') ? 'theme-light' : '';
   }
   function setTheme(t) { HAStore.setPref('theme', t); applyTheme(); }
@@ -97,6 +97,7 @@
     if (currentView && currentView.destroy) {
       try { currentView.destroy(); } catch (e) {}
     }
+    HANav.stopMarquee();
     els.view.innerHTML = '';
     clearToast();
     overlay = null;
