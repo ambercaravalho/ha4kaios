@@ -123,6 +123,18 @@
 
     function destroy() { container = null; }
 
-    return { render: render, onKey: onKey, destroy: destroy };
+    function saveState() { return { index: focus ? focus.index : 0 }; }
+    function restoreState(s) {
+      if (!s || !focus) return;
+      var i = s.index || 0;
+      var n = focus.count();
+      if (i > n - 1) i = n - 1;
+      if (i >= 0) focus.setIndex(i);
+    }
+
+    return {
+      render: render, onKey: onKey, destroy: destroy,
+      saveState: saveState, restoreState: restoreState
+    };
   };
 })(window);

@@ -10,11 +10,11 @@ accident). The last top-level screen you visited is restored on the next launch.
 ```mermaid
 flowchart TD
   Home[Home hub] --> Fav[Favorites]
+  Home --> Areas[Areas]
   Home --> Scenes[Scenes]
   Home --> Autos[Automations]
-  Home --> Areas[Areas]
   Home --> All[All devices]
-  Home -->|"Settings softkey"| Settings[Settings]
+  Home -->|"Settings softkey (left)"| Settings[Settings]
   Areas --> AreaEntities[Area entities]
   AreaEntities --> DeviceEntities[Device entities]
   Fav --> Detail[Entity detail]
@@ -24,16 +24,17 @@ flowchart TD
 ```
 
 - **Home** - a connection/last-updated card plus logically grouped entries:
-  Favorites, Scenes, Automations, Areas, and All devices. When offline, the left
-  softkey is `Reconnect`; the right softkey opens **Settings**.
-- **Favorites** - your local dashboard. Reorder via the options menu
-  (`Options -> Reorder list`), then Up/Down to move and Done to finish.
+  Favorites, Areas, Scenes, Automations, and All devices. The left softkey opens
+  **Settings**; when offline, the right softkey is `Reconnect`.
+- **Favorites** - your local dashboard. Reorder via the right softkey
+  (`Reorder`), then Up/Down to move and Done to finish.
 - **Scenes** / **Automations** - dedicated lists of just your scenes and
   automations, so the common "activate a scene / run an automation" flow is one
   step from Home.
 - **Areas** - areas from Home Assistant (plus `Unassigned`), each opening its
-  entity list. Areas require the WebSocket connection; on REST fallback the All
-  screen groups by domain instead.
+  entity list split into `Scenes`, `Automations`, and `Entities` sections. Areas
+  require the WebSocket connection; on REST fallback the All screen groups by
+  domain instead.
 - **All devices** - every entity, grouped by area (or domain), with search.
 - **Detail** - per-entity controls; the right softkey toggles favorite.
 
@@ -62,11 +63,13 @@ shares one component:
 | Center / Enter | Primary action (toggle / activate / open)      |
 | 1-9            | Jump to the nth row                            |
 | Left softkey   | `Back`                                         |
-| Right softkey  | `Options`                                      |
+| Right softkey  | `Details` (`Reorder` on Favorites)             |
 
-The **options menu** offers the primary action, Details, Add/Remove favorite,
-and Go to area (when the entity has one). For a collapsed device row, Center /
-Enter and the options menu open the device's entity sub-screen.
+The right softkey opens the focused entity's **Details** screen. On the
+Favorites list it instead reads `Reorder` and enters reorder mode. A collapsed
+device row has no Details, so the right softkey is blank there; Center / Enter
+opens the device's entity sub-screen. Add or remove favorites from the Details
+screen's right softkey (`Fav` / `Unfav`).
 
 ## Search (All devices)
 
@@ -88,8 +91,8 @@ entities are omitted from smart/sorted lists.
 
 ## Favorites
 
-Add or remove favorites from any list's options menu or the detail screen's
-right softkey. Favorites are stored locally on the device (in `localStorage`),
+Add or remove favorites from the detail screen's right softkey (`Fav` /
+`Unfav`). Favorites are stored locally on the device (in `localStorage`),
 independent of Home Assistant, and keep the order you set.
 
 ## Themes

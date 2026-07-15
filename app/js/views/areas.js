@@ -92,9 +92,19 @@
     function onRegistries() { if (container) build(); }
     function destroy() { container = null; }
 
+    function saveState() { return { index: focus ? focus.index : 0 }; }
+    function restoreState(s) {
+      if (!s || !focus) return;
+      var i = s.index || 0;
+      var n = focus.count();
+      if (i > n - 1) i = n - 1;
+      if (i >= 0) focus.setIndex(i);
+    }
+
     return {
       render: render, onKey: onKey, destroy: destroy,
-      onStates: onStates, onRegistries: onRegistries
+      onStates: onStates, onRegistries: onRegistries,
+      saveState: saveState, restoreState: restoreState
     };
   };
 
@@ -111,6 +121,7 @@
           if (areaId === UNASSIGNED) return app.getClient().getUnassignedEntities();
           return app.getClient().getAreaEntities(areaId);
         },
+        group: 'kind',
         collapseDevices: true,
         emptyText: 'No entities in this area.',
         leftLabel: 'Back'
@@ -124,7 +135,9 @@
       onStates: function () { if (list) list.onStates(); },
       onStateChanged: function (e) { if (list) list.onStateChanged(e); },
       onRegistries: function () { if (list) list.onRegistries(); },
-      destroy: function () { if (list) list.destroy(); }
+      destroy: function () { if (list) list.destroy(); },
+      saveState: function () { return list ? list.saveState() : null; },
+      restoreState: function (s) { if (list) list.restoreState(s); }
     };
   };
 })(window);

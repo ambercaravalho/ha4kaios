@@ -1,7 +1,8 @@
 /* components/entitylist.js - reusable live entity list with focus navigation,
    smart sorting/filtering, optional search + grouping, optional device
-   collapsing, a per-item options menu, number-key jumps, and an optional
-   reorder mode. Exposes HAEntityList. ES5-safe.
+   collapsing, direct Details on the right softkey, number-key jumps, and an
+   optional reorder mode (right softkey on reorderable lists). Exposes
+   HAEntityList. ES5-safe.
 
    Items are either { kind:'entity', id } or, when collapseDevices is on and a
    device has >= 2 visible entities, { kind:'device', deviceId, ids, primaryId }.
@@ -66,6 +67,7 @@
         var aid = client().getEntityArea(id);
         return aid ? client().getAreaName(aid) : 'No area';
       });
+      if (group === 'kind') return groupByKind(filtered);
       return [{ header: null, ids: filtered }];
     }
 
@@ -95,6 +97,23 @@
       for (var j = 0; j < order.length; j++) {
         out.push({ header: order[j], ids: map[order[j]] });
       }
+      return out;
+    }
+
+    // Fixed-order buckets: Scenes, Automations, then everything else. Preserves
+    // the already-applied sort within each bucket; empty buckets are dropped.
+    function groupByKind(ids) {
+      var scenes = [], autos = [], rest = [];
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        if (id.indexOf('scene.') === 0) scenes.push(id);
+        else if (id.indexOf('automation.') === 0) autos.push(id);
+        else rest.push(id);
+      }
+      var out = [];
+      if (scenes.length) out.push({ header: 'Scenes', ids: scenes });
+      if (autos.length) out.push({ header: 'Automations', ids: autos });
+      if (rest.length) out.push({ header: 'Entities', ids: rest });
       return out;
     }
 
@@ -328,7 +347,15 @@
       if (reorderMode) { app.setSoftkeys('Done', 'Move', ''); return; }
       var left = opts.leftLabel || 'Back';
       var center = flatItems.length ? primaryLabel() : '';
-      var right = flatItems.length ? 'Options' : '';
+      var right = '';
+      if (flatItems.length) {
+        if (opts.reorderable) right = 'Reorder';
+        else {
+          var it = focusedItem();
+          // Device rows have no single Details screen: no right action.
+          right = (it && it.kind === 'device') ? '' : 'Details';
+        }
+      }
       app.setSoftkeys(left, center, right);
     }
 
@@ -364,62 +391,13 @@
       else app.back();
     }
 
-    function openOptions() {
+    // Right softkey: reorderable lists enter reorder mode; entity rows jump
+    // straight to Details; device rows have no secondary action.
+    function doSecondary() {
+      if (opts.reorderable) { enterReorder(); return; }
       var it = focusedItem();
-      if (!it) return;
-
-      if (it.kind === 'device') {
-        var ditems = [{ label: 'Open', onSelect: function () { openDevice(it); } }];
-        var daid = client().getEntityArea(it.primaryId);
-        if (daid) {
-          ditems.push({ label: 'Go to area', onSelect: function () {
-            app.go('areaEntities', { areaId: daid, name: client().getAreaName(daid) });
-          }});
-        }
-        HAMenu.open(app, {
-          title: deviceLabel(it),
-          items: ditems,
-          onClose: function () { updateSoftkeys(); }
-        });
-        return;
-      }
-
-      var id = it.id;
-      var e = entities()[id];
-      var items = [];
-
-      if (e) {
-        var act = HAFmt.primaryAction(e);
-        if (act.kind !== 'detail') {
-          items.push({ label: act.label, onSelect: function () {
-            callService(act.domain, act.service, act.data);
-          }});
-        }
-      }
-      items.push({ label: 'Details', onSelect: function () { openDetail(id); } });
-      items.push({
-        label: HAStore.isFavorite(id) ? 'Remove favorite' : 'Add favorite',
-        onSelect: function () {
-          var nowFav = HAStore.toggleFavorite(id);
-          app.toast(nowFav ? 'Added to favorites' : 'Removed', 900);
-          if (opts.onFavoriteChange) opts.onFavoriteChange();
-        }
-      });
-      var aid = client().getEntityArea(id);
-      if (aid) {
-        items.push({ label: 'Go to area', onSelect: function () {
-          app.go('areaEntities', { areaId: aid, name: client().getAreaName(aid) });
-        }});
-      }
-      if (opts.reorderable) {
-        items.push({ label: 'Reorder list', onSelect: enterReorder });
-      }
-
-      HAMenu.open(app, {
-        title: e ? HAFmt.friendlyName(e) : id,
-        items: items,
-        onClose: function () { updateSoftkeys(); }
-      });
+      if (!it || it.kind === 'device') return;
+      openDetail(it.id);
     }
 
     /* ---------- reorder (collapse is suppressed, so items are all entities) ---------- */
@@ -495,7 +473,7 @@
           focus.move(-1); updateSoftkeys(); return true;
         case 'Down': focus.move(1); updateSoftkeys(); return true;
         case 'Enter': doPrimary(); return true;
-        case 'SoftRight': openOptions(); return true;
+        case 'SoftRight': doSecondary(); return true;
         case 'SoftLeft': doLeft(); return true;
         case 'Backspace': doLeft(); return true;
       }
@@ -523,6 +501,19 @@
       container = null; rowsEl = null;
     }
 
+    /* ---- back-stack position memory ---- */
+    function saveState() {
+      return { index: focus ? focus.index : 0 };
+    }
+
+    function restoreState(s) {
+      if (!s || !rowsEl || !focus) return;
+      var i = s.index || 0;
+      if (i < 0) i = 0;
+      if (i > focus.count() - 1) i = focus.count() - 1;
+      if (i >= 0) { focus.setIndex(i); updateSoftkeys(); }
+    }
+
     return {
       render: render,
       onKey: onKey,
@@ -530,6 +521,8 @@
       onStateChanged: onStateChanged,
       onRegistries: onRegistries,
       destroy: destroy,
+      saveState: saveState,
+      restoreState: restoreState,
       refresh: function () { if (rowsEl) renderRows(); }
     };
   }

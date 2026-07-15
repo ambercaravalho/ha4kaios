@@ -1,6 +1,6 @@
 /* views/home.js - top-level hub: connection card + logically grouped menu
-   (Favorites, Scenes, Automations, Areas, All devices). Settings lives on the
-   right softkey. ES5-safe. */
+   (Favorites, Areas, Scenes, Automations, All devices). Settings lives on the
+   left softkey. ES5-safe. */
 (function (global) {
   'use strict';
 
@@ -35,9 +35,9 @@
       container.appendChild(card);
 
       addRow('Favorites', String(HAStore.getFavorites().length), 'favorites', 'favorites');
+      addRow('Areas', areaCount(), 'areas', 'areas');
       addRow('Scenes', domainCount('scene.'), 'scenes', 'scenes');
       addRow('Automations', domainCount('automation.'), 'automations', 'automations');
-      addRow('Areas', areaCount(), 'areas', 'areas');
       addRow('All devices', String(entityCount()), 'all', 'all');
 
       focus.refresh(true);
@@ -111,7 +111,7 @@
     function updateSoftkeys() {
       var c = client();
       var offline = c && !c.authenticated && !c.usingRest;
-      app.setSoftkeys(offline ? 'Reconnect' : '', 'Open', 'Settings');
+      app.setSoftkeys('Settings', 'Open', offline ? 'Reconnect' : '');
     }
 
     function open() {
@@ -126,8 +126,8 @@
         case 'Up': focus.move(-1); return true;
         case 'Down': focus.move(1); return true;
         case 'Enter': open(); return true;
-        case 'SoftRight': app.go('settings'); return true;
-        case 'SoftLeft':
+        case 'SoftLeft': app.go('settings'); return true;
+        case 'SoftRight':
           if (client() && !client().authenticated) app.reconnect();
           return true;
         case 'Backspace':
@@ -143,13 +143,24 @@
     function onStatus() { if (container) build(); }
     function destroy() { container = null; }
 
+    function saveState() { return { index: focus ? focus.index : 0 }; }
+    function restoreState(s) {
+      if (!s || !focus) return;
+      var i = s.index || 0;
+      var n = focus.count();
+      if (i > n - 1) i = n - 1;
+      if (i >= 0) focus.setIndex(i);
+    }
+
     return {
       render: render,
       onKey: onKey,
       destroy: destroy,
       onStates: onStates,
       onRegistries: onRegistries,
-      onStatus: onStatus
+      onStatus: onStatus,
+      saveState: saveState,
+      restoreState: restoreState
     };
   };
 })(window);

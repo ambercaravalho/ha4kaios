@@ -21,7 +21,10 @@
       var cfg = HAConfig.load();
 
       // Static structure only (no server data) -> innerHTML is CSP-safe here.
+      // Action rows use the shared menu-row convention; their icon badges are
+      // appended as real SVG nodes below (SVG isn't injected as inline HTML).
       container.innerHTML =
+        '<div class="section">Connection</div>' +
         '<div class="form">' +
         '  <div class="field">' +
         '    <label for="ha-url">Home Assistant URL</label>' +
@@ -31,15 +34,16 @@
         '    <label for="ha-token">Long-Lived Access Token</label>' +
         '    <input id="ha-token" type="password" placeholder="Paste or scan token" />' +
         '  </div>' +
-        '  <div id="ha-scan" class="control" data-nofocus="1">' +
-        '    <span class="control-label">Scan token QR</span>' +
-        '    <span class="control-value">&#9633;</span>' +
-        '  </div>' +
-        '  <div id="ha-connect" class="control" data-nofocus="1">' +
-        '    <span class="control-label">Connect</span>' +
-        '    <span class="control-value">&#8250;</span>' +
-        '  </div>' +
         '</div>' +
+        '<div id="ha-scan" class="menu-row">' +
+        '  <span class="menu-row-badge"></span>' +
+        '  <span class="menu-row-label">Scan token QR</span>' +
+        '</div>' +
+        '<div id="ha-connect" class="menu-row">' +
+        '  <span class="menu-row-badge"></span>' +
+        '  <span class="menu-row-label">Connect</span>' +
+        '</div>' +
+        '<div class="section">Help</div>' +
         '<div class="hint">Create a token in Home Assistant: Profile &raquo; Security &raquo; ' +
         'Long-Lived Access Tokens &raquo; Create Token, then scan its QR code.</div>';
 
@@ -47,6 +51,9 @@
       tokenInput = document.getElementById('ha-token');
       scanBtn = document.getElementById('ha-scan');
       connectBtn = document.getElementById('ha-connect');
+
+      addBadge(scanBtn, 'camera');
+      addBadge(connectBtn, 'lan');
 
       urlInput.value = cfg.baseUrl || '';
       tokenInput.value = cfg.token || '';
@@ -63,11 +70,16 @@
       return el === scanBtn || el === connectBtn;
     }
 
+    function addBadge(row, glyph) {
+      var badge = row.getElementsByClassName('menu-row-badge')[0];
+      if (badge) badge.appendChild(HAIcons.svg(glyph));
+    }
+
     function applyFocus() {
       for (var i = 0; i < focusables.length; i++) {
         var el = focusables[i];
         if (isButton(el)) {
-          el.className = (i === focusIndex) ? 'control focused' : 'control';
+          el.className = (i === focusIndex) ? 'menu-row focused' : 'menu-row';
         }
         if (i === focusIndex) {
           if (isButton(el)) {

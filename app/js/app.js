@@ -13,8 +13,9 @@
   var client = null;
   var currentView = null;
   var currentName = '';
+  var currentEntry = null; // the stack entry currently rendered (holds saved state)
   var toastTimer = null;
-  var stack = [];       // [{ name, params }]
+  var stack = [];       // [{ name, params, state }]
   var overlay = null;   // { onKey } - intercepts keys when set
 
   var app = {
@@ -88,6 +89,11 @@
   /* ---- navigation (back-stack) ---- */
   function renderEntry(entry) {
     if (!HAViews[entry.name]) return;
+    // Persist the outgoing view's state onto the entry it belonged to, so the
+    // list/menu position is restored if we navigate back to it.
+    if (currentView && currentEntry && currentView.saveState) {
+      try { currentEntry.state = currentView.saveState(); } catch (e) {}
+    }
     if (currentView && currentView.destroy) {
       try { currentView.destroy(); } catch (e) {}
     }
@@ -96,7 +102,11 @@
     overlay = null;
     currentView = HAViews[entry.name](app);
     currentName = entry.name;
+    currentEntry = entry;
     currentView.render(els.view, entry.params || {});
+    if (entry.state && currentView.restoreState) {
+      try { currentView.restoreState(entry.state); } catch (e) {}
+    }
     HAStore.setPref('lastScreen', { name: entry.name, params: entry.params || {} });
   }
 

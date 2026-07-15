@@ -16,8 +16,8 @@ a REST fallback.
 - Control many domains: **lights** (brightness), **switches**, **fans**,
   **covers**, **locks**, **climate**, **media players**, **scenes/scripts**,
   **buttons**, **numbers**, and **selects**; read-only for everything else.
-- Per-entity **options menu** (toggle, details, favorite, go to area) and quick
-  actions from any list.
+- Quick primary actions from any list (toggle / activate / open) plus a direct
+  **Details** screen for controls, attributes, and favoriting.
 - Live updates via the WebSocket API with auto-reconnect and a REST fallback.
 - **Scan the token from a QR code** with the camera - no typing the long string.
 - **Dark / light themes** and D-pad + softkey UI for small, non-touch screens.
@@ -48,7 +48,7 @@ then launch **HA4KaiOS**, enter your URL, scan or paste the token, and press
 | Center / Enter | Primary action (toggle/open) | Activate focused control       |
 | 1-9            | Jump to the nth row          | -                              |
 | Left softkey   | `Back`                       | `Back`                         |
-| Right softkey  | `Options`                    | `Fav` / `Unfav`                |
+| Right softkey  | `Details` (`Reorder` on Favorites) | `Fav` / `Unfav`          |
 
 Back returns to the previous screen (Home is the root). See the
 [UI guide](docs/ui.md) for screens, sorting, favorites, and search.

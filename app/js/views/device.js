@@ -26,7 +26,9 @@
       onStates: function () { if (list) list.onStates(); },
       onStateChanged: function (e) { if (list) list.onStateChanged(e); },
       onRegistries: function () { if (list) list.onRegistries(); },
-      destroy: function () { if (list) list.destroy(); }
+      destroy: function () { if (list) list.destroy(); },
+      saveState: function () { return list ? list.saveState() : null; },
+      restoreState: function (s) { if (list) list.restoreState(s); }
     };
   };
 })(window);

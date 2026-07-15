@@ -17,8 +17,8 @@ objects to `window`.
 | `js/nav.js` | `HANav` | Key normalization (incl. digits) and the `FocusList` D-pad helper. |
 | `js/qr.js` | `HAQR` | Camera capture + QR decode for token scanning. |
 | `js/domains.js` | `HADomains` | Per-domain control builders for the detail screen. |
-| `js/components/entitylist.js` | `HAEntityList` | Reusable live list: focus, sort/filter, search, device collapsing, options menu, reorder. |
-| `js/components/menu.js` | `HAMenu` | Modal list overlay for option menus and pickers. |
+| `js/components/entitylist.js` | `HAEntityList` | Reusable live list: focus, sort/filter, search, device collapsing, direct Details, reorder. |
+| `js/components/menu.js` | `HAMenu` | Modal list overlay for settings pickers. |
 | `js/vendor/jsQR.js` | `jsQR` | Vendored QR decoder. |
 | `js/views/setup.js` | `HAViews.setup` | URL + token entry (and QR scan). |
 | `js/views/home.js` | `HAViews.home` | Hub: connection card + Favorites/Scenes/Automations/Areas/All (Settings on softkey). |

@@ -16,7 +16,7 @@
         reorderable: true,
         collapseDevices: true,
         leftLabel: 'Back',
-        emptyText: "No favorites yet. Open any entity's Options to add one.",
+        emptyText: 'No favorites yet. Open an entity and press Fav to add one.',
         getIds: function () { return HAStore.getFavorites(); },
         onMove: function (id, delta) { return HAStore.moveFavorite(id, delta); },
         onFavoriteChange: function () { if (list) list.refresh(); }
@@ -30,7 +30,9 @@
       onStates: function () { if (list) list.onStates(); },
       onStateChanged: function (e) { if (list) list.onStateChanged(e); },
       onRegistries: function () { if (list) list.onRegistries(); },
-      destroy: function () { if (list) list.destroy(); }
+      destroy: function () { if (list) list.destroy(); },
+      saveState: function () { return list ? list.saveState() : null; },
+      restoreState: function (s) { if (list) list.restoreState(s); }
     };
   };
 })(window);
