@@ -1,0 +1,285 @@
+/* HA4KaiOS - KaiOS 2.5 (Gecko 48) friendly styles.
+   Target screen ~240x320, no touch, D-pad + softkeys. */
+
+* {
+  box-sizing: border-box;
+  -moz-user-select: none;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #12151c;
+  color: #eef1f5;
+  font-family: "Open Sans", "Segoe UI", sans-serif;
+  font-size: 15px;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* Header */
+#header {
+  flex: 0 0 auto;
+  height: 26px;
+  line-height: 26px;
+  padding: 0 6px;
+  background: #03a9f4;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#header-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: normal;
+  padding: 1px 5px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+.status-online { background: #2e7d32; color: #fff; }
+.status-offline { background: #b71c1c; color: #fff; }
+.status-connecting { background: #f9a825; color: #000; }
+
+/* Main scroll area */
+#main {
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+}
+
+.view {
+  width: 100%;
+}
+
+/* Softkey bar */
+#softkeys {
+  flex: 0 0 auto;
+  height: 24px;
+  line-height: 24px;
+  background: #1c212b;
+  border-top: 1px solid #000;
+  display: flex;
+  font-size: 12px;
+  color: #cfd6df;
+}
+
+.softkey {
+  flex: 1 1 33%;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.softkey-left { text-align: left; }
+.softkey-center { text-align: center; font-weight: bold; }
+.softkey-right { text-align: right; }
+
+/* List rows */
+.row {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #232a35;
+}
+
+.row.focused {
+  background: #03a9f4;
+  color: #fff;
+}
+
+.row-main {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.row-name {
+  display: block;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-sub {
+  display: block;
+  font-size: 11px;
+  color: #93a1b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row.focused .row-sub { color: #e3f3fc; }
+
+.row-value {
+  flex: 0 0 auto;
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: right;
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-on { color: #ffd54f; }
+.row.focused .state-on { color: #fff; }
+
+/* Section headers */
+.section {
+  padding: 3px 8px;
+  background: #0d1016;
+  color: #6d7c90;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #232a35;
+}
+
+/* Setup form */
+.form {
+  padding: 8px;
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  color: #93a1b3;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  padding: 6px;
+  font-size: 14px;
+  background: #1c212b;
+  color: #eef1f5;
+  border: 1px solid #2f3947;
+  border-radius: 3px;
+}
+
+.field input:focus {
+  border-color: #03a9f4;
+  outline: none;
+}
+
+.hint {
+  font-size: 11px;
+  color: #6d7c90;
+  padding: 0 8px 8px;
+  line-height: 1.4;
+}
+
+/* Detail view */
+.detail {
+  padding: 8px;
+}
+
+.detail-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.detail-entity {
+  font-size: 11px;
+  color: #6d7c90;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: #1c212b;
+  border: 1px solid #2f3947;
+}
+
+.control.focused {
+  border-color: #03a9f4;
+  background: #17202b;
+}
+
+.control-label {
+  font-size: 13px;
+  color: #cfd6df;
+}
+
+.control-value {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* Attribute list */
+.attr {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #1a1f28;
+}
+
+.attr-key { color: #6d7c90; }
+.attr-val { color: #cfd6df; max-width: 60%; text-align: right; word-break: break-all; }
+
+/* Empty / message states */
+.message {
+  padding: 20px 12px;
+  text-align: center;
+  color: #93a1b3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Toast */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  max-width: 90%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  z-index: 100;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hidden { display: none; }

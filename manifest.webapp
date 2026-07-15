@@ -1,0 +1,22 @@
+{
+  "name": "HA4KaiOS",
+  "description": "Home Assistant client for KaiOS 2.5 feature phones",
+  "version": "0.1.0",
+  "launch_path": "/index.html",
+  "type": "privileged",
+  "developer": {
+    "name": "ha4kaios",
+    "url": "https://github.com/ambercaravalho/ha4kaios"
+  },
+  "icons": {
+    "56": "/icons/icon-56.png",
+    "112": "/icons/icon-112.png"
+  },
+  "permissions": {
+    "systemXHR": {
+      "description": "Talk to a self-hosted Home Assistant instance over the local network without CORS restrictions."
+    }
+  },
+  "default_locale": "en-US",
+  "csp": "default-src * data: blob:; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:"
+}
