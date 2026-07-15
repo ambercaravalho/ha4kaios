@@ -19,6 +19,9 @@
       case 'Backspace': return 'Backspace';
       case 'EndCall': return 'EndCall';
     }
+    // Number keys (used for quick list jumps).
+    if (k && k.length === 1 && k >= '0' && k <= '9') return k;
+
     switch (ev.keyCode) {
       case 38: return 'Up';
       case 40: return 'Down';
@@ -29,6 +32,8 @@
       case 112: return 'SoftLeft';  // some devices
       case 113: return 'SoftRight';
     }
+    if (ev.keyCode >= 48 && ev.keyCode <= 57) return String(ev.keyCode - 48);
+    if (ev.keyCode >= 96 && ev.keyCode <= 105) return String(ev.keyCode - 96);
     return null;
   }
 

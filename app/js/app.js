@@ -1,14 +1,19 @@
-/* app.js - controller: routing, softkeys, header/status, toast, and the
-   single HAClient instance whose events are forwarded to the active view.
-   ES5-safe. */
+/* app.js - controller: back-stack routing, softkeys, header/status, toast,
+   theme, an overlay hook (menus), and the single HAClient instance whose events
+   are forwarded to the active view. ES5-safe. */
 (function (global) {
   'use strict';
+
+  // Top-level screens eligible for last-screen restore.
+  var ROOT_SCREENS = { favorites: 1, areas: 1, all: 1, settings: 1 };
 
   var els = {};
   var client = null;
   var currentView = null;
   var currentName = '';
   var toastTimer = null;
+  var stack = [];       // [{ name, params }]
+  var overlay = null;   // { onKey } - intercepts keys when set
 
   var app = {
     setTitle: setTitle,
@@ -16,9 +21,14 @@
     toast: toast,
     clearToast: clearToast,
     go: go,
+    back: back,
     getClient: getClient,
     hasClient: hasClient,
-    startClientAndGoList: startClientAndGoList
+    startClientAndGoList: startClientAndGoHome,
+    setOverlay: setOverlay,
+    setTheme: setTheme,
+    reconnect: reconnect,
+    signOut: signOut
   };
 
   function cacheEls() {
@@ -31,9 +41,7 @@
     els.toast = document.getElementById('toast');
   }
 
-  function setTitle(t) {
-    els.title.textContent = t || 'HA4KaiOS';
-  }
+  function setTitle(t) { els.title.textContent = t || 'HA4KaiOS'; }
 
   function setSoftkeys(left, center, right) {
     els.skLeft.textContent = left || '';
@@ -56,9 +64,7 @@
     els.toast.className = 'toast';
     if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
     var duration = (ms === undefined) ? 1500 : ms;
-    if (duration > 0) {
-      toastTimer = setTimeout(clearToast, duration);
-    }
+    if (duration > 0) toastTimer = setTimeout(clearToast, duration);
   }
 
   function clearToast() {
@@ -68,26 +74,56 @@
 
   function getClient() { return client; }
   function hasClient() { return !!client; }
+  function setOverlay(o) { overlay = o; }
 
-  function go(name, params) {
-    if (!HAViews[name]) return;
+  /* ---- theme ---- */
+  function applyTheme() {
+    var t = HAStore.getPref('theme', 'dark');
+    document.body.className = (t === 'light') ? 'theme-light' : '';
+  }
+  function setTheme(t) { HAStore.setPref('theme', t); applyTheme(); }
+
+  /* ---- navigation (back-stack) ---- */
+  function renderEntry(entry) {
+    if (!HAViews[entry.name]) return;
     if (currentView && currentView.destroy) {
       try { currentView.destroy(); } catch (e) {}
     }
     els.view.innerHTML = '';
     clearToast();
-    currentView = HAViews[name](app);
-    currentName = name;
-    currentView.render(els.view, params || {});
+    overlay = null;
+    currentView = HAViews[entry.name](app);
+    currentName = entry.name;
+    currentView.render(els.view, entry.params || {});
+    HAStore.setPref('lastScreen', { name: entry.name, params: entry.params || {} });
   }
 
-  function startClientAndGoList() {
+  function go(name, params, opts) {
+    opts = opts || {};
+    if (!HAViews[name]) return;
+    if (opts.root) stack = [];
+    var entry = { name: name, params: params || {} };
+    if (opts.replace && stack.length) stack[stack.length - 1] = entry;
+    else stack.push(entry);
+    renderEntry(entry);
+  }
+
+  function back() {
+    if (stack.length > 1) {
+      stack.pop();
+      renderEntry(stack[stack.length - 1]);
+    }
+  }
+
+  /* ---- client lifecycle ---- */
+  function startClientAndGoHome() {
     var cfg = HAConfig.load();
     if (client) { client.stop(); client = null; }
     client = new HAClient(cfg);
 
     client.on('status', function (info) {
       setStatusIndicator(info);
+      if (currentView && currentView.onStatus) currentView.onStatus(info);
     });
     client.on('states', function () {
       if (currentView && currentView.onStates) currentView.onStates();
@@ -95,31 +131,53 @@
     client.on('state_changed', function (evt) {
       if (currentView && currentView.onStateChanged) currentView.onStateChanged(evt);
     });
+    client.on('registries', function () {
+      if (currentView && currentView.onRegistries) currentView.onRegistries();
+    });
     client.on('auth_invalid', function (msg) {
       toast(msg || 'Invalid token', 3000);
-      go('setup');
+      go('setup', {}, { root: true });
     });
 
     client.start();
-    go('list');
+    goHomeWithRestore();
   }
 
-  function onKey(key, ev) {
-    if (currentView && currentView.onKey) {
-      return currentView.onKey(key, ev);
+  function goHomeWithRestore() {
+    go('home', {}, { root: true });
+    var last = HAStore.getPref('lastScreen', null);
+    if (last && last.name && ROOT_SCREENS[last.name]) {
+      go(last.name, last.params || {});
     }
+  }
+
+  function reconnect() {
+    if (client) client.reconnect();
+  }
+
+  function signOut() {
+    if (client) { client.stop(); client = null; }
+    HAConfig.clear();
+    go('setup', {}, { root: true });
+  }
+
+  /* ---- global key routing ---- */
+  function onKey(key, ev) {
+    if (overlay && overlay.onKey) return overlay.onKey(key, ev);
+    if (currentView && currentView.onKey) return currentView.onKey(key, ev);
     return false;
   }
 
   function boot() {
     cacheEls();
+    applyTheme();
     HANav.attach(onKey);
 
     var cfg = HAConfig.load();
     if (HAConfig.isConfigured(cfg)) {
-      startClientAndGoList();
+      startClientAndGoHome();
     } else {
-      go('setup');
+      go('setup', {}, { root: true });
     }
   }
 

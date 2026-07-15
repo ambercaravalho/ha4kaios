@@ -79,9 +79,9 @@
     overlay.className = 'qr-overlay';
     if (hint) hint.textContent = 'Point at the token QR code';
 
-    // SECURITY-REVIEW: requests camera access (declared via the "camera"
-    // manifest permission). Frames are processed locally only and never sent
-    // anywhere; the stream is released as soon as scanning stops.
+    // SECURITY-REVIEW: requests camera access via getUserMedia (declared with
+    // the "video-capture" manifest permission). Frames are processed locally
+    // only and never sent anywhere; the stream is released when scanning stops.
     getStream({ video: { facingMode: 'environment' }, audio: false })
       .then(onStream, function () {
         // Retry without facingMode (some devices reject the constraint).

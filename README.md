@@ -7,13 +7,20 @@ a REST fallback.
 
 ## Features
 
-- View and control common entities: **lights** (toggle + brightness),
-  **switches**, **scenes**, and **climate** (mode + target temp); read-only
-  **sensors** and everything else.
-- Live updates via the Home Assistant WebSocket API, with auto-reconnect and a
-  REST polling fallback.
+- **Home hub** with Favorites, Areas, All devices, and Settings, plus a
+  connection/last-updated line.
+- **Area grouping** from Home Assistant's registries, a searchable **All
+  devices** screen, and a local **favorites dashboard** with reorder.
+- **Smart sorting** (controllable + active first) with Name / Status modes, and
+  automatic hiding of hidden/diagnostic entities.
+- Control many domains: **lights** (brightness), **switches**, **fans**,
+  **covers**, **locks**, **climate**, **media players**, **scenes/scripts**,
+  **buttons**, **numbers**, and **selects**; read-only for everything else.
+- Per-entity **options menu** (toggle, details, favorite, go to area) and quick
+  actions from any list.
+- Live updates via the WebSocket API with auto-reconnect and a REST fallback.
 - **Scan the token from a QR code** with the camera - no typing the long string.
-- D-pad + softkey UI designed for small, non-touch screens.
+- **Dark / light themes** and D-pad + softkey UI for small, non-touch screens.
 
 ## Requirements
 
@@ -34,22 +41,28 @@ then launch **HA4KaiOS**, enter your URL, scan or paste the token, and press
 
 ## Controls
 
-| Key            | List view               | Detail view                    |
-| -------------- | ----------------------- | ------------------------------ |
-| Up / Down      | Move selection          | Move between controls          |
-| Left / Right   | -                       | Adjust value (brightness/temp) |
-| Center / Enter | Primary action (toggle) | Activate focused control       |
-| Left softkey   | `Setup`                 | `Back`                         |
-| Right softkey  | `Details`               | -                              |
+| Key            | List view                    | Detail view                    |
+| -------------- | ---------------------------- | ------------------------------ |
+| Up / Down      | Move selection (or search)   | Move between controls          |
+| Left / Right   | -                            | Adjust value (brightness/temp) |
+| Center / Enter | Primary action (toggle/open) | Activate focused control       |
+| 1-9            | Jump to the nth row          | -                              |
+| Left softkey   | `Back`                       | `Back`                         |
+| Right softkey  | `Options`                    | `Fav` / `Unfav`                |
+
+Back returns to the previous screen (Home is the root). See the
+[UI guide](docs/ui.md) for screens, sorting, favorites, and search.
 
 ## Project layout
 
 ```
 app/                # everything that ships in the packaged app
-  manifest.webapp   # privileged manifest (systemXHR + camera, icons, CSP)
+  manifest.webapp   # privileged manifest (systemXHR + video-capture, icons, CSP)
   index.html        # app shell (external CSS/JS only)
-  css/app.css       # small-screen styles
-  js/               # config, xhr, ha-client, nav, qr, views, app
+  css/app.css       # small-screen styles + dark/light themes
+  js/               # config, store, xhr, ha-client, format, nav, qr, domains, app
+  js/components/    # reusable entity list + menu overlay
+  js/views/         # setup, home, areas, favorites, all, detail, settings
   js/vendor/        # jsQR (vendored QR decoder)
   icons/            # 56 / 112 px app icons
 docs/               # wiki (deep-dive documentation)
@@ -59,6 +72,7 @@ build/              # build.sh + generated application.zip
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [UI guide](docs/ui.md)
 - [KaiOS 2.5 constraints](docs/kaios-constraints.md)
 - [Home Assistant API](docs/home-assistant-api.md)
 - [QR token scanning](docs/qr-scanning.md)
@@ -70,6 +84,6 @@ build/              # build.sh + generated application.zip
   sent only to the host you configure; it is never logged.
 - Data from Home Assistant is rendered with `textContent` (never `innerHTML`) to
   prevent injection.
-- The `camera` permission is used solely for QR scanning; frames are processed
-  on-device and the camera is released as soon as scanning ends.
+- The `video-capture` permission is used solely for QR scanning; frames are
+  processed on-device and the camera is released as soon as scanning ends.
 - Prefer `https://` when Home Assistant is reachable beyond a trusted LAN.

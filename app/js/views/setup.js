@@ -187,13 +187,13 @@
           doConnect();
           return true;
         case 'SoftLeft':
-          if (app.hasClient()) { app.go('list'); return true; }
+          if (app.hasClient()) { app.back(); return true; }
           return false;
         case 'Backspace':
           // Let a focused text input handle deletion; only navigate back
           // when focus is on a button.
           if (isButton(focusables[focusIndex]) && app.hasClient()) {
-            app.go('list');
+            app.back();
             return true;
           }
           return false;

@@ -26,6 +26,14 @@
     this.pollTimer = null;
     this.status = 'offline';
     this.usingRest = false;
+    this.lastUpdate = 0;
+
+    // Registries (populated over WebSocket after auth; empty on REST fallback).
+    this.areas = {};        // area_id -> { name }
+    this.deviceArea = {};   // device_id -> area_id
+    this.entityMeta = {};   // entity_id -> { areaId, deviceId, category, hidden, name }
+    this.registriesLoaded = false;
+    this.registryRefetchTimer = null;
   }
 
   /* ---- tiny event emitter ---- */
@@ -68,6 +76,7 @@
   HAClient.prototype.clearTimers = function () {
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+    if (this.registryRefetchTimer) { clearTimeout(this.registryRefetchTimer); this.registryRefetchTimer = null; }
   };
 
   /* ---- WebSocket transport ---- */
@@ -152,19 +161,156 @@
 
     this.command({ type: 'subscribe_events', event_type: 'state_changed' })
       .then(function () {}, function () {});
+
+    this.fetchRegistries();
+    this.subscribeRegistryUpdates();
   };
 
   HAClient.prototype.onEvent = function (event) {
-    if (!event || event.event_type !== 'state_changed') return;
-    var data = event.data || {};
-    var entityId = data.entity_id;
-    if (!entityId) return;
-    if (data.new_state) {
-      this.entities[entityId] = data.new_state;
-    } else {
-      delete this.entities[entityId];
+    if (!event) return;
+    var type = event.event_type;
+    if (type === 'state_changed') {
+      var data = event.data || {};
+      var entityId = data.entity_id;
+      if (!entityId) return;
+      if (data.new_state) {
+        this.entities[entityId] = data.new_state;
+      } else {
+        delete this.entities[entityId];
+      }
+      this.lastUpdate = Date.now();
+      this.emit('state_changed', { entityId: entityId, state: data.new_state || null });
+    } else if (type === 'area_registry_updated' ||
+               type === 'device_registry_updated' ||
+               type === 'entity_registry_updated') {
+      this.scheduleRegistryRefetch();
     }
-    this.emit('state_changed', { entityId: entityId, state: data.new_state || null });
+  };
+
+  /* ---- registries (areas / devices / entities) ---- */
+  HAClient.prototype.fetchRegistries = function () {
+    var self = this;
+    var jobs = [
+      this.command({ type: 'config/area_registry/list' }),
+      this.command({ type: 'config/device_registry/list' }),
+      this.command({ type: 'config/entity_registry/list_for_display' })
+    ];
+    Promise.all(jobs).then(function (res) {
+      self.buildRegistries(res[0], res[1], res[2]);
+      self.registriesLoaded = true;
+      self.emit('registries', self);
+    }, function () {
+      // Registries unavailable (older HA / permissions): stay in flat mode.
+    });
+  };
+
+  HAClient.prototype.buildRegistries = function (areas, devices, entityDisplay) {
+    var i, a, d;
+    var areaMap = {}, deviceArea = {}, entityMeta = {};
+
+    if (areas && areas.length) {
+      for (i = 0; i < areas.length; i++) {
+        a = areas[i];
+        if (a && a.area_id) areaMap[a.area_id] = { name: a.name || a.area_id };
+      }
+    }
+    if (devices && devices.length) {
+      for (i = 0; i < devices.length; i++) {
+        d = devices[i];
+        if (d && d.id) deviceArea[d.id] = d.area_id || null;
+      }
+    }
+    // list_for_display returns { entities: [ {ei, ai, di, ec, hb, en} ], ... }
+    var list = entityDisplay && entityDisplay.entities ? entityDisplay.entities : [];
+    for (i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (!e || !e.ei) continue;
+      entityMeta[e.ei] = {
+        areaId: e.ai || null,
+        deviceId: e.di || null,
+        category: (e.ec === undefined ? null : e.ec),
+        hidden: !!e.hb,
+        name: e.en || null
+      };
+    }
+
+    this.areas = areaMap;
+    this.deviceArea = deviceArea;
+    this.entityMeta = entityMeta;
+  };
+
+  HAClient.prototype.subscribeRegistryUpdates = function () {
+    var types = ['area_registry_updated', 'device_registry_updated', 'entity_registry_updated'];
+    for (var i = 0; i < types.length; i++) {
+      this.command({ type: 'subscribe_events', event_type: types[i] })
+        .then(function () {}, function () {});
+    }
+  };
+
+  HAClient.prototype.scheduleRegistryRefetch = function () {
+    var self = this;
+    if (this.registryRefetchTimer) return;
+    this.registryRefetchTimer = setTimeout(function () {
+      self.registryRefetchTimer = null;
+      if (self.authenticated) self.fetchRegistries();
+    }, 1500);
+  };
+
+  HAClient.prototype.hasRegistries = function () { return this.registriesLoaded; };
+
+  HAClient.prototype.getEntityArea = function (entityId) {
+    var meta = this.entityMeta[entityId];
+    if (!meta) return null;
+    if (meta.areaId) return meta.areaId;
+    if (meta.deviceId && this.deviceArea[meta.deviceId]) return this.deviceArea[meta.deviceId];
+    return null;
+  };
+
+  HAClient.prototype.getAreaName = function (areaId) {
+    return (this.areas[areaId] && this.areas[areaId].name) || areaId;
+  };
+
+  // Returns [{ areaId, name }] sorted by name, only areas that contain entities.
+  HAClient.prototype.getAreas = function () {
+    var counts = {};
+    for (var id in this.entities) {
+      if (!this.entities.hasOwnProperty(id)) continue;
+      var areaId = this.getEntityArea(id);
+      if (areaId) counts[areaId] = (counts[areaId] || 0) + 1;
+    }
+    var out = [];
+    for (var aid in counts) {
+      if (counts.hasOwnProperty(aid)) {
+        out.push({ areaId: aid, name: this.getAreaName(aid), count: counts[aid] });
+      }
+    }
+    out.sort(function (x, y) {
+      var nx = x.name.toLowerCase(), ny = y.name.toLowerCase();
+      return nx < ny ? -1 : (nx > ny ? 1 : 0);
+    });
+    return out;
+  };
+
+  HAClient.prototype.getAreaEntities = function (areaId) {
+    var ids = [];
+    for (var id in this.entities) {
+      if (!this.entities.hasOwnProperty(id)) continue;
+      if (this.getEntityArea(id) === areaId) ids.push(id);
+    }
+    return ids;
+  };
+
+  HAClient.prototype.getUnassignedEntities = function () {
+    var ids = [];
+    for (var id in this.entities) {
+      if (!this.entities.hasOwnProperty(id)) continue;
+      if (!this.getEntityArea(id)) ids.push(id);
+    }
+    return ids;
+  };
+
+  HAClient.prototype.getEntityMeta = function (entityId) {
+    return this.entityMeta[entityId] || null;
   };
 
   HAClient.prototype.ingestStates = function (states) {
@@ -173,6 +319,19 @@
       var s = states[i];
       if (s && s.entity_id) this.entities[s.entity_id] = s;
     }
+    this.lastUpdate = Date.now();
+  };
+
+  HAClient.prototype.getLastUpdate = function () { return this.lastUpdate; };
+
+  // Force an immediate reconnect attempt (used by "reconnect now").
+  HAClient.prototype.reconnect = function () {
+    if (this.stopped) this.stopped = false;
+    this.backoff = BASE_BACKOFF;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    if (this.authenticated) return;
+    if (this.ws) { try { this.ws.onclose = null; this.ws.close(); } catch (e) {} this.ws = null; }
+    this.connectWs();
   };
 
   HAClient.prototype.wsSendRaw = function (obj) {

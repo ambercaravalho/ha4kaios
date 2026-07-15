@@ -6,6 +6,7 @@ first-run steps, see the [project README](../README.md).
 ## Contents
 
 - [Architecture](architecture.md) - modules, data flow, and the event model.
+- [UI guide](ui.md) - screens, navigation, favorites, sorting, and search.
 - [KaiOS 2.5 constraints](kaios-constraints.md) - Gecko 48 limits, CSP, and the
   workarounds this app relies on.
 - [Home Assistant API](home-assistant-api.md) - WebSocket + REST usage and auth.

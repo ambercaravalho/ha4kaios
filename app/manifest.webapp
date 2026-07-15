@@ -16,8 +16,8 @@
     "systemXHR": {
       "description": "Talk to a self-hosted Home Assistant instance over the local network without CORS restrictions."
     },
-    "camera": {
-      "description": "Scan a Home Assistant long-lived access token QR code."
+    "video-capture": {
+      "description": "Scan a Home Assistant long-lived access token QR code with the camera."
     }
   },
   "default_locale": "en-US",

@@ -27,7 +27,12 @@ several paths in order:
 - Constraints: prefer the rear camera (`facingMode: 'environment'`); if rejected,
   retry with `{ video: true }`.
 
-The `camera` permission is declared in the manifest.
+The **`video-capture`** permission is declared in the manifest. This is the
+permission that gates `getUserMedia` on KaiOS/Gecko 48 - the separate `camera`
+permission is for the low-level Camera API and does not grant `getUserMedia`
+access (using it results in an immediate "permission denied"). `video-capture`
+is a "prompt" permission for privileged apps, so the device asks the user to
+allow the camera the first time a scan runs.
 
 ## Performance
 
@@ -45,7 +50,10 @@ revokes any object URL, and hides the overlay. The setup view also calls it from
 
 ## Troubleshooting
 
-- **"Camera permission denied"** - grant the camera permission for the app.
+- **"Camera permission denied"** - accept the camera prompt on first scan. If it
+  persists, the app was likely installed before the manifest declared
+  `video-capture`; reinstall the updated package (manifest permissions are read
+  at install time).
 - **"No camera found" / "Camera unavailable"** - device/simulator has no usable
   camera; paste the token manually instead.
 - **Preview rotated or mirrored** - a per-device orientation quirk; can be fixed
