@@ -282,4 +282,58 @@ html, body {
   text-overflow: ellipsis;
 }
 
+/* QR scanner overlay */
+.qr-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.qr-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.qr-canvas {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  left: -10px;
+  top: -10px;
+  visibility: hidden;
+}
+
+.qr-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62%;
+  height: 62%;
+  margin-left: -31%;
+  margin-top: -35%;
+  border: 2px solid #03a9f4;
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+}
+
+.qr-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 2px #000;
+}
+
 .hidden { display: none; }

@@ -26,10 +26,19 @@
 
   <div id="toast" class="toast hidden"></div>
 
+  <div id="qr-overlay" class="qr-overlay hidden">
+    <video id="qr-video" class="qr-video" autoplay muted playsinline></video>
+    <canvas id="qr-canvas" class="qr-canvas"></canvas>
+    <div id="qr-frame" class="qr-frame"></div>
+    <div id="qr-hint" class="qr-hint">Point at the token QR code</div>
+  </div>
+
+  <script src="js/vendor/jsQR.js"></script>
   <script src="js/config.js"></script>
   <script src="js/xhr.js"></script>
   <script src="js/ha-client.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/qr.js"></script>
   <script src="js/views/setup.js"></script>
   <script src="js/views/list.js"></script>
   <script src="js/views/detail.js"></script>

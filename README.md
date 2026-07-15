@@ -8,6 +8,9 @@ state) with a REST fallback.
 ## Features
 
 - Long-lived access token authentication (no password stored).
+- **Scan the token from a QR code** instead of typing it: Home Assistant's
+  token dialog shows a QR code of the token, and the app reads it with the
+  camera (via the vendored `jsQR` decoder).
 - Live entity states via the Home Assistant WebSocket API (`state_changed`
   subscription), with automatic reconnect and a REST polling fallback.
 - Entity list grouped by domain: lights, switches, scenes, climate, sensors,
@@ -35,10 +38,12 @@ KaiOS 2.5 runs on Gecko 48 (Firefox 48). This app is written accordingly:
 - **ES5-safe** JavaScript only (no `let`/`const`/arrow/`async`/`await`) — Gecko
   48 predates `async`/`await`.
 - **Privileged packaged app** (`"type": "privileged"` in `manifest.webapp`) with
-  the **`systemXHR`** permission. REST calls use
+  the **`systemXHR`** and **`camera`** permissions. REST calls use
   `new XMLHttpRequest({ mozSystem: true })`, which bypasses same-origin/CORS so
   the app can reach a self-hosted HA on the LAN. WebSocket connects cross-origin
-  without CORS.
+  without CORS. The `camera` permission is only used for QR token scanning; the
+  camera stream is processed locally (frames decoded on-device) and released as
+  soon as scanning ends.
 - **CSP**: privileged apps enforce `script-src 'self'`. All JavaScript lives in
   external files and events are wired with `addEventListener` (no inline
   `<script>`, no `onclick=`, no `eval`).
@@ -63,7 +68,9 @@ js/config.js        # baseUrl + token persistence (localStorage)
 js/xhr.js           # mozSystem XHR Promise wrapper (REST)
 js/ha-client.js     # WebSocket auth/subscriptions + REST fallback
 js/nav.js           # D-pad / softkey key normalization + FocusList
-js/views/setup.js   # URL + token entry, test connection
+js/qr.js            # camera + jsQR token QR scanner
+js/vendor/jsQR.js   # vendored QR decoder (ES5-compatible)
+js/views/setup.js   # URL + token entry (+ QR scan), test connection
 js/views/list.js    # live entity list (+ shared HAFmt helpers)
 js/views/detail.js  # per-entity control view
 js/app.js           # routing, softkeys, status, toast, client wiring
@@ -108,9 +115,13 @@ device-specific steps.
 ## First run
 
 1. Launch the app.
-2. Enter your Home Assistant URL (e.g. `http://192.168.1.10:8123`) and paste your
-   long-lived access token.
-3. Press the right softkey (`Connect`). On success the entity list appears and
+2. Enter your Home Assistant URL (e.g. `http://192.168.1.10:8123`).
+3. Enter the token by either:
+   - Selecting **Scan token QR** and pointing the camera at the QR code shown in
+     Home Assistant's "Long-Lived Access Tokens" dialog (press a softkey /
+     Backspace to cancel), or
+   - Pasting/typing it into the token field.
+4. Press the right softkey (`Connect`). On success the entity list appears and
    the header shows `online` (or `rest` when using the REST fallback).
 
 ## Security

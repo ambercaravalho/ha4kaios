@@ -1,5 +1,5 @@
 /* views/setup.js - enter HA base URL + long-lived access token, test, persist.
-   ES5-safe. */
+   Supports scanning the token from Home Assistant's QR code. ES5-safe. */
 (function (global) {
   'use strict';
 
@@ -11,8 +11,10 @@
     var focusIndex = 0;
     var urlInput = null;
     var tokenInput = null;
+    var scanBtn = null;
     var connectBtn = null;
     var busy = false;
+    var scanning = false;
 
     function render(root, params) {
       container = root;
@@ -27,7 +29,11 @@
         '  </div>' +
         '  <div class="field">' +
         '    <label for="ha-token">Long-Lived Access Token</label>' +
-        '    <input id="ha-token" type="password" placeholder="Paste token" />' +
+        '    <input id="ha-token" type="password" placeholder="Paste or scan token" />' +
+        '  </div>' +
+        '  <div id="ha-scan" class="control" data-nofocus="1">' +
+        '    <span class="control-label">Scan token QR</span>' +
+        '    <span class="control-value">&#9633;</span>' +
         '  </div>' +
         '  <div id="ha-connect" class="control" data-nofocus="1">' +
         '    <span class="control-label">Connect</span>' +
@@ -35,16 +41,17 @@
         '  </div>' +
         '</div>' +
         '<div class="hint">Create a token in Home Assistant: Profile &raquo; Security &raquo; ' +
-        'Long-Lived Access Tokens &raquo; Create Token.</div>';
+        'Long-Lived Access Tokens &raquo; Create Token, then scan its QR code.</div>';
 
       urlInput = document.getElementById('ha-url');
       tokenInput = document.getElementById('ha-token');
+      scanBtn = document.getElementById('ha-scan');
       connectBtn = document.getElementById('ha-connect');
 
       urlInput.value = cfg.baseUrl || '';
       tokenInput.value = cfg.token || '';
 
-      focusables = [urlInput, tokenInput, connectBtn];
+      focusables = [urlInput, tokenInput, scanBtn, connectBtn];
       focusIndex = 0;
 
       app.setTitle('Setup');
@@ -52,27 +59,37 @@
       updateSoftkeys();
     }
 
+    function isButton(el) {
+      return el === scanBtn || el === connectBtn;
+    }
+
     function applyFocus() {
       for (var i = 0; i < focusables.length; i++) {
         var el = focusables[i];
+        if (isButton(el)) {
+          el.className = (i === focusIndex) ? 'control focused' : 'control';
+        }
         if (i === focusIndex) {
-          if (el === connectBtn) {
-            el.className = 'control focused';
-            el.setAttribute('data-nofocus', '1');
+          if (isButton(el)) {
             if (document.activeElement && document.activeElement.blur) {
               document.activeElement.blur();
             }
           } else {
             try { el.focus(); } catch (e) {}
           }
-        } else if (el === connectBtn) {
-          el.className = 'control';
         }
       }
     }
 
     function updateSoftkeys() {
-      var center = (focusables[focusIndex] === connectBtn) ? 'CONNECT' : '';
+      if (scanning) {
+        app.setSoftkeys('Cancel', '', '');
+        return;
+      }
+      var focused = focusables[focusIndex];
+      var center = '';
+      if (focused === scanBtn) center = 'SCAN';
+      else if (focused === connectBtn) center = 'CONNECT';
       var left = app.hasClient() ? 'Back' : '';
       app.setSoftkeys(left, center, 'Connect');
     }
@@ -84,6 +101,42 @@
       if (next === focusIndex) return;
       focusIndex = next;
       applyFocus();
+      updateSoftkeys();
+    }
+
+    function startScan() {
+      if (scanning || busy) return;
+      if (!HAQR.isSupported()) {
+        app.toast('Camera/QR not available', 2500);
+        return;
+      }
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      scanning = true;
+      updateSoftkeys();
+      HAQR.start({
+        onResult: function (text) {
+          scanning = false;
+          tokenInput.value = text;
+          // Move focus to Connect so the user can confirm in one press.
+          focusIndex = focusables.length - 1;
+          applyFocus();
+          updateSoftkeys();
+          app.toast('Token scanned', 1500);
+        },
+        onError: function (err) {
+          scanning = false;
+          updateSoftkeys();
+          app.toast((err && err.message) || 'Scan failed', 2500);
+        }
+      });
+    }
+
+    function cancelScan() {
+      if (!scanning) return;
+      scanning = false;
+      HAQR.stop();
       updateSoftkeys();
     }
 
@@ -108,11 +161,26 @@
     }
 
     function onKey(key) {
+      // While the scanner overlay is up, keys only control the scanner.
+      if (scanning) {
+        switch (key) {
+          case 'SoftLeft':
+          case 'SoftRight':
+          case 'Backspace':
+          case 'Enter':
+          case 'EndCall':
+            cancelScan();
+            return true;
+        }
+        return true; // swallow everything else during scan
+      }
+
       switch (key) {
         case 'Up': move(-1); return true;
         case 'Down': move(1); return true;
         case 'Enter':
-          if (focusables[focusIndex] === connectBtn) { doConnect(); }
+          if (focusables[focusIndex] === scanBtn) { startScan(); }
+          else if (focusables[focusIndex] === connectBtn) { doConnect(); }
           else { move(1); }
           return true;
         case 'SoftRight':
@@ -122,9 +190,9 @@
           if (app.hasClient()) { app.go('list'); return true; }
           return false;
         case 'Backspace':
-          // Let the focused text input handle deletion; only navigate back
-          // when focus is on the Connect button.
-          if (focusables[focusIndex] === connectBtn && app.hasClient()) {
+          // Let a focused text input handle deletion; only navigate back
+          // when focus is on a button.
+          if (isButton(focusables[focusIndex]) && app.hasClient()) {
             app.go('list');
             return true;
           }
@@ -134,6 +202,7 @@
     }
 
     function destroy() {
+      if (scanning) { HAQR.stop(); scanning = false; }
       if (document.activeElement && document.activeElement.blur) {
         document.activeElement.blur();
       }
