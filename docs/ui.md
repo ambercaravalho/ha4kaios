@@ -71,3 +71,16 @@ independent of Home Assistant, and keep the order you set.
 ## Themes
 
 Switch between **Dark** and **Light** in Settings; the choice is remembered.
+
+## Visual style
+
+The styling follows the [KaiOS design guide](https://developer.kaiostech.com/docs/design-guide/ui-component)
+and KaiUI conventions: the Open Sans type scale (primary 17px / secondary 14px /
+tertiary 12px), 60px list items, a centered uppercase header, and the standard
+light-gray softkey bar (left/right Title Case, center ALL CAPS). Selection uses
+the Home Assistant blue accent as the focus highlight. Sizes are fixed px (the
+KaiOS spec is defined in rem against a 10px root, but on-device Gecko font
+inflation can rebase rem and blow up the layout, so px keeps it deterministic;
+text auto-inflation is disabled via `text-size-adjust`). All colors are CSS
+variables in [app/css/app.css](../app/css/app.css), so the dark (default) and
+light themes are just variable overrides.
