@@ -1,5 +1,5 @@
 # Build artifact
-application.zip
+build/application.zip
 
 # OS cruft
 .DS_Store
