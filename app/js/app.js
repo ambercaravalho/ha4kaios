@@ -5,7 +5,9 @@
   'use strict';
 
   // Top-level screens eligible for last-screen restore.
-  var ROOT_SCREENS = { favorites: 1, areas: 1, all: 1, settings: 1 };
+  var ROOT_SCREENS = {
+    favorites: 1, scenes: 1, automations: 1, areas: 1, all: 1, settings: 1
+  };
 
   var els = {};
   var client = null;

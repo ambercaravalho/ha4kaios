@@ -262,6 +262,28 @@ html, body {
 .state-on { color: var(--on); }
 .row.focused .state-on { color: #fff; }
 
+/* Glyph badges: center the inline SVG inside the fixed-size tile. */
+.row-badge, .menu-row-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row-badge svg, .menu-row-badge svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Drill-in affordance for collapsed device rows. */
+.row-chevron {
+  flex: 0 0 auto;
+  margin-left: 6px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--fg-sec);
+}
+.row.focused .row-chevron { color: #fff; }
+
 /* ----------------------------------------------------------------------------
    Menu rows (home / areas / settings navigational lists)
 ---------------------------------------------------------------------------- */

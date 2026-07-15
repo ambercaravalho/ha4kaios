@@ -11,19 +11,23 @@ objects to `window`.
 | `js/config.js` | `HAConfig` | Load/save `{ baseUrl, token }` in `localStorage`; URL + WebSocket URL helpers. |
 | `js/store.js` | `HAStore` | Local UI prefs + favorites (separate `localStorage` key). |
 | `js/xhr.js` | `HAXhr` | Promise wrapper over `mozSystem` `XMLHttpRequest` (REST). |
-| `js/ha-client.js` | `HAClient` | Connection layer: WebSocket auth/subscriptions, **registries**, REST fallback. |
-| `js/format.js` | `HAFmt` | Formatting, icons/badges, capabilities, primary actions, sort comparators. |
+| `js/ha-client.js` | `HAClient` | Connection layer: WebSocket auth/subscriptions, **registries** (areas + devices), REST fallback. |
+| `js/icons.js` | `HAIcons` | Inline-SVG glyph set (per-domain + per-category), themed via `currentColor`. |
+| `js/format.js` | `HAFmt` | Formatting, badges, capabilities, primary actions, sort comparators. |
 | `js/nav.js` | `HANav` | Key normalization (incl. digits) and the `FocusList` D-pad helper. |
 | `js/qr.js` | `HAQR` | Camera capture + QR decode for token scanning. |
 | `js/domains.js` | `HADomains` | Per-domain control builders for the detail screen. |
-| `js/components/entitylist.js` | `HAEntityList` | Reusable live list: focus, sort/filter, search, options menu, reorder. |
+| `js/components/entitylist.js` | `HAEntityList` | Reusable live list: focus, sort/filter, search, device collapsing, options menu, reorder. |
 | `js/components/menu.js` | `HAMenu` | Modal list overlay for option menus and pickers. |
 | `js/vendor/jsQR.js` | `jsQR` | Vendored QR decoder. |
 | `js/views/setup.js` | `HAViews.setup` | URL + token entry (and QR scan). |
-| `js/views/home.js` | `HAViews.home` | Hub: connection card + Favorites/Areas/All/Settings. |
+| `js/views/home.js` | `HAViews.home` | Hub: connection card + Favorites/Scenes/Automations/Areas/All (Settings on softkey). |
 | `js/views/areas.js` | `HAViews.areas`, `HAViews.areaEntities` | Area picker and per-area entity list. |
 | `js/views/favorites.js` | `HAViews.favorites` | Favorites dashboard with reorder. |
 | `js/views/all.js` | `HAViews.all` | All entities, searchable and grouped. |
+| `js/views/scenes.js` | `HAViews.scenes` | Dedicated list of `scene.` entities. |
+| `js/views/automations.js` | `HAViews.automations` | Dedicated list of `automation.` entities. |
+| `js/views/device.js` | `HAViews.deviceEntities` | Entities of one device (drill-in from a collapsed device row). |
 | `js/views/detail.js` | `HAViews.detail` | Per-entity control shell (uses `HADomains`). |
 | `js/views/settings.js` | `HAViews.settings` | Sort/theme/diagnostics + connection actions. |
 | `js/app.js` | `App` | Back-stack routing, softkeys, header/status, toast, theme, overlay, client wiring. |
@@ -57,11 +61,14 @@ intercept keys while a menu is open.
 ## Data layer (registries + prefs)
 
 After `auth_ok`, `HAClient` also fetches the area, device, and entity registries
-(`config/*_registry/list*`), builds an `entity_id -> area` map, emits a
-`registries` event, and refetches (debounced) on `*_registry_updated`. On REST
-fallback there are no registries, so lists stay flat. `HAStore` holds favorites
-and UI preferences (sort mode, theme, diagnostics, last screen) in a separate
-`localStorage` key from the credentials.
+(`config/*_registry/list*`). It keeps `deviceMeta[deviceId] = { name, areaId }`
+and `entityMeta[entityId] = { areaId, deviceId, ... }`, resolves an entity's area
+via its own area or its device's area, emits a `registries` event, and refetches
+(debounced) on `*_registry_updated`. Getters `getEntityDevice`, `getDeviceName`,
+and `getDeviceEntities` back the device-collapsing feature in `HAEntityList`. On
+REST fallback there are no registries, so lists stay flat (no grouping or
+collapsing). `HAStore` holds favorites and UI preferences (sort mode, theme,
+diagnostics, last screen) in a separate `localStorage` key from the credentials.
 
 ## Data flow
 

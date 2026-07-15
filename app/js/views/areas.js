@@ -111,6 +111,7 @@
           if (areaId === UNASSIGNED) return app.getClient().getUnassignedEntities();
           return app.getClient().getAreaEntities(areaId);
         },
+        collapseDevices: true,
         emptyText: 'No entities in this area.',
         leftLabel: 'Back'
       });

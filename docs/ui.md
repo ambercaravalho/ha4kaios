@@ -10,28 +10,51 @@ accident). The last top-level screen you visited is restored on the next launch.
 ```mermaid
 flowchart TD
   Home[Home hub] --> Fav[Favorites]
+  Home --> Scenes[Scenes]
+  Home --> Autos[Automations]
   Home --> Areas[Areas]
   Home --> All[All devices]
-  Home --> Settings[Settings]
+  Home -->|"Settings softkey"| Settings[Settings]
   Areas --> AreaEntities[Area entities]
+  AreaEntities --> DeviceEntities[Device entities]
   Fav --> Detail[Entity detail]
   AreaEntities --> Detail
+  DeviceEntities --> Detail
   All --> Detail
 ```
 
-- **Home** - a connection/last-updated card plus Favorites, Areas, All devices,
-  and Settings. When offline, the left softkey is `Reconnect`.
+- **Home** - a connection/last-updated card plus logically grouped entries:
+  Favorites, Scenes, Automations, Areas, and All devices. When offline, the left
+  softkey is `Reconnect`; the right softkey opens **Settings**.
 - **Favorites** - your local dashboard. Reorder via the options menu
   (`Options -> Reorder list`), then Up/Down to move and Done to finish.
+- **Scenes** / **Automations** - dedicated lists of just your scenes and
+  automations, so the common "activate a scene / run an automation" flow is one
+  step from Home.
 - **Areas** - areas from Home Assistant (plus `Unassigned`), each opening its
   entity list. Areas require the WebSocket connection; on REST fallback the All
   screen groups by domain instead.
 - **All devices** - every entity, grouped by area (or domain), with search.
 - **Detail** - per-entity controls; the right softkey toggles favorite.
 
+Every row shows a small purpose glyph (an inline SVG icon reflecting the domain,
+e.g. a bulb for lights or a lock for locks) in place of a text badge.
+
+## Device grouping
+
+When Home Assistant registries are available, entities that belong to the same
+device (for example the five entities of an "Entry Door Lock") collapse into a
+single device row showing the device name, an entity count, and a `>` chevron.
+Selecting it drills into a sub-screen listing just that device's entities.
+Devices with only one visible entity, and entities with no device, appear as
+normal rows. Collapsing applies to Areas, All devices, and Favorites, and is
+automatically suppressed while searching or reordering so those operate on
+individual entities.
+
 ## Lists
 
-Every list (Favorites, Area entities, All) shares one component:
+Every list (Favorites, Scenes, Automations, Area entities, Device entities, All)
+shares one component:
 
 | Key            | Action                                         |
 | -------------- | ---------------------------------------------- |
@@ -42,7 +65,8 @@ Every list (Favorites, Area entities, All) shares one component:
 | Right softkey  | `Options`                                      |
 
 The **options menu** offers the primary action, Details, Add/Remove favorite,
-and Go to area (when the entity has one).
+and Go to area (when the entity has one). For a collapsed device row, Center /
+Enter and the options menu open the device's entity sub-screen.
 
 ## Search (All devices)
 

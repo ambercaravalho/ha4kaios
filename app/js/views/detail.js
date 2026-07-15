@@ -126,12 +126,21 @@
       if (cur && cur.el.scrollIntoView) cur.el.scrollIntoView(false);
     }
 
+    // Scroll the main content area (used to reach read-only content such as the
+    // attributes list, and for entities that have no focusable controls).
+    function scrollMain(delta) {
+      var main = document.getElementById('main');
+      if (main) main.scrollTop += delta;
+    }
+
     function move(delta) {
-      if (!controls.length) return;
+      // No controls (e.g. a sensor): Up/Down just scroll the page.
+      if (!controls.length) { scrollMain(delta * 40); return; }
       var next = focusIndex + delta;
       if (next < 0) next = 0;
       if (next > controls.length - 1) next = controls.length - 1;
-      if (next === focusIndex) return;
+      // At the first/last control: keep scrolling so attributes stay reachable.
+      if (next === focusIndex) { scrollMain(delta * 40); return; }
       focusIndex = next;
       applyFocus();
       updateSoftkeys();

@@ -1,7 +1,11 @@
 /* components/entitylist.js - reusable live entity list with focus navigation,
-   smart sorting/filtering, optional search + grouping, a per-entity options
-   menu, number-key jumps, and an optional reorder mode. Exposes HAEntityList.
-   ES5-safe. */
+   smart sorting/filtering, optional search + grouping, optional device
+   collapsing, a per-item options menu, number-key jumps, and an optional
+   reorder mode. Exposes HAEntityList. ES5-safe.
+
+   Items are either { kind:'entity', id } or, when collapseDevices is on and a
+   device has >= 2 visible entities, { kind:'device', deviceId, ids, primaryId }.
+   Collapsing is suppressed while searching or reordering. */
 (function (global) {
   'use strict';
 
@@ -12,8 +16,9 @@
     var searchInput = null;
     var focus = null;
 
-    var rowMap = {};   // entity_id -> { row, name, sub, value, badge }
-    var flatIds = [];  // entity_ids in display order
+    var rowMap = {};       // entity_id -> { row, name, sub, value, badge } (entity rows)
+    var coveredIds = {};   // member entity_id -> deviceId (collapsed into a device row)
+    var flatItems = [];    // items in display order (entity/device)
     var searchText = '';
     var searchFocused = false;
     var reorderMode = false;
@@ -27,7 +32,6 @@
       var ids = (opts.getIds ? opts.getIds() : []) || [];
       var ents = entities();
       var showDiag = HAStore.getPref('showDiagnostics', false);
-      var out = [];
 
       if (opts.ordered) {
         ids = applySearch(ids, ents);
@@ -55,14 +59,13 @@
 
       var group = opts.group || 'none';
       if (typeof group === 'function') group = group();
-      if (group === 'none') return [{ header: null, ids: filtered }];
       if (group === 'domain') return groupBy(filtered, function (id) {
         return HAFmt.domainLabel(HAFmt.domainOf(id));
-      }, ents, cmp);
+      });
       if (group === 'area') return groupBy(filtered, function (id) {
         var aid = client().getEntityArea(id);
         return aid ? client().getAreaName(aid) : 'No area';
-      }, ents, cmp);
+      });
       return [{ header: null, ids: filtered }];
     }
 
@@ -79,7 +82,7 @@
       return res;
     }
 
-    function groupBy(ids, keyFn, ents, cmp) {
+    function groupBy(ids, keyFn) {
       var map = {};
       var order = [];
       for (var i = 0; i < ids.length; i++) {
@@ -93,6 +96,40 @@
         out.push({ header: order[j], ids: map[order[j]] });
       }
       return out;
+    }
+
+    // Collapse device members within an already-sorted id list into items.
+    function computeItems(ids) {
+      var collapse = opts.collapseDevices && !searchText && !reorderMode &&
+                     client().hasRegistries();
+      var items = [];
+      var i;
+      if (!collapse) {
+        for (i = 0; i < ids.length; i++) items.push({ kind: 'entity', id: ids[i] });
+        return items;
+      }
+      var groups = {};
+      for (i = 0; i < ids.length; i++) {
+        var dev = client().getEntityDevice(ids[i]);
+        if (dev) {
+          if (!groups[dev]) groups[dev] = [];
+          groups[dev].push(ids[i]);
+        }
+      }
+      var emitted = {};
+      for (i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        var d = client().getEntityDevice(id);
+        if (d && groups[d].length >= 2) {
+          if (!emitted[d]) {
+            emitted[d] = true;
+            items.push({ kind: 'device', deviceId: d, ids: groups[d].slice(), primaryId: groups[d][0] });
+          }
+          continue;
+        }
+        items.push({ kind: 'entity', id: id });
+      }
+      return items;
     }
 
     /* ---------- rendering ---------- */
@@ -126,11 +163,17 @@
     function renderRows() {
       var sections = computeSections();
       rowMap = {};
-      flatIds = [];
+      coveredIds = {};
+      flatItems = [];
       rowsEl.innerHTML = '';
 
+      var built = [];
       var total = 0;
-      for (var s = 0; s < sections.length; s++) total += sections[s].ids.length;
+      for (var s = 0; s < sections.length; s++) {
+        var its = computeItems(sections[s].ids);
+        built.push({ header: sections[s].header, items: its });
+        total += its.length;
+      }
 
       if (!total) {
         var msg = document.createElement('div');
@@ -143,17 +186,20 @@
         return;
       }
 
-      for (var i = 0; i < sections.length; i++) {
-        if (sections[i].header) {
+      for (var i = 0; i < built.length; i++) {
+        if (built[i].header) {
           var sec = document.createElement('div');
           sec.className = 'section';
-          sec.textContent = sections[i].header;
+          sec.textContent = built[i].header;
           rowsEl.appendChild(sec);
         }
-        for (var j = 0; j < sections[i].ids.length; j++) {
-          var id = sections[i].ids[j];
-          rowsEl.appendChild(buildRow(id));
-          flatIds.push(id);
+        for (var j = 0; j < built[i].items.length; j++) {
+          var item = built[i].items[j];
+          rowsEl.appendChild(buildRow(item));
+          flatItems.push(item);
+          if (item.kind === 'device') {
+            for (var k = 0; k < item.ids.length; k++) coveredIds[item.ids[k]] = item.deviceId;
+          }
         }
       }
 
@@ -161,7 +207,11 @@
       updateSoftkeys();
     }
 
-    function buildRow(id) {
+    function buildRow(item) {
+      return item.kind === 'device' ? buildDeviceRow(item) : buildEntityRow(item.id);
+    }
+
+    function buildEntityRow(id) {
       var ents = entities();
       var e = ents[id];
 
@@ -171,7 +221,7 @@
 
       var badge = document.createElement('span');
       badge.className = 'row-badge';
-      badge.textContent = HAFmt.badge(id);
+      badge.appendChild(HAIcons.forEntity(id));
 
       var main = document.createElement('div');
       main.className = 'row-main';
@@ -194,6 +244,43 @@
 
       rowMap[id] = { row: row, name: name, sub: sub, value: value, badge: badge };
       return row;
+    }
+
+    function buildDeviceRow(item) {
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.setAttribute('data-device', item.deviceId);
+
+      var badge = document.createElement('span');
+      badge.className = 'row-badge';
+      badge.appendChild(HAIcons.forDevice());
+
+      var main = document.createElement('div');
+      main.className = 'row-main';
+      var name = document.createElement('span');
+      name.className = 'row-name';
+      name.textContent = deviceLabel(item);
+      var sub = document.createElement('span');
+      sub.className = 'row-sub';
+      sub.textContent = item.ids.length + ' entities';
+      main.appendChild(name);
+      main.appendChild(sub);
+
+      var chev = document.createElement('span');
+      chev.className = 'row-chevron';
+      chev.textContent = '\u203A'; // ›
+
+      row.appendChild(badge);
+      row.appendChild(main);
+      row.appendChild(chev);
+      return row;
+    }
+
+    function deviceLabel(item) {
+      var n = client().getDeviceName(item.deviceId);
+      if (n) return n;
+      var e = entities()[item.primaryId];
+      return e ? HAFmt.friendlyName(e) : item.deviceId;
     }
 
     function subtitle(id, e) {
@@ -225,13 +312,14 @@
     }
 
     /* ---------- focus + actions ---------- */
-    function focusedId() { return flatIds[focus.index]; }
+    function focusedItem() { return flatItems[focus.index]; }
 
     function primaryLabel() {
-      var id = focusedId();
-      var e = id ? entities()[id] : null;
-      if (!e) return '';
-      return HAFmt.primaryAction(e).label;
+      var it = focusedItem();
+      if (!it) return '';
+      if (it.kind === 'device') return 'Open';
+      var e = entities()[it.id];
+      return e ? HAFmt.primaryAction(e).label : '';
     }
 
     function updateSoftkeys() {
@@ -239,23 +327,28 @@
       if (searchFocused) { app.setSoftkeys('List', '', 'Clear'); return; }
       if (reorderMode) { app.setSoftkeys('Done', 'Move', ''); return; }
       var left = opts.leftLabel || 'Back';
-      var center = flatIds.length ? primaryLabel() : '';
-      var right = flatIds.length ? 'Options' : '';
+      var center = flatItems.length ? primaryLabel() : '';
+      var right = flatItems.length ? 'Options' : '';
       app.setSoftkeys(left, center, right);
     }
 
     function doPrimary() {
-      var id = focusedId();
-      if (!id) return;
-      var e = entities()[id];
-      if (!e) { openDetail(id); return; }
+      var it = focusedItem();
+      if (!it) return;
+      if (it.kind === 'device') { openDevice(it); return; }
+      var e = entities()[it.id];
+      if (!e) { openDetail(it.id); return; }
       var act = HAFmt.primaryAction(e);
-      if (act.kind === 'detail') { openDetail(id); return; }
+      if (act.kind === 'detail') { openDetail(it.id); return; }
       callService(act.domain, act.service, act.data);
     }
 
     function openDetail(id) {
       app.go('detail', { entityId: id });
+    }
+
+    function openDevice(item) {
+      app.go('deviceEntities', { deviceId: item.deviceId, name: deviceLabel(item) });
     }
 
     function callService(domain, service, data) {
@@ -272,8 +365,26 @@
     }
 
     function openOptions() {
-      var id = focusedId();
-      if (!id) return;
+      var it = focusedItem();
+      if (!it) return;
+
+      if (it.kind === 'device') {
+        var ditems = [{ label: 'Open', onSelect: function () { openDevice(it); } }];
+        var daid = client().getEntityArea(it.primaryId);
+        if (daid) {
+          ditems.push({ label: 'Go to area', onSelect: function () {
+            app.go('areaEntities', { areaId: daid, name: client().getAreaName(daid) });
+          }});
+        }
+        HAMenu.open(app, {
+          title: deviceLabel(it),
+          items: ditems,
+          onClose: function () { updateSoftkeys(); }
+        });
+        return;
+      }
+
+      var id = it.id;
       var e = entities()[id];
       var items = [];
 
@@ -311,19 +422,27 @@
       });
     }
 
-    /* ---------- reorder ---------- */
+    /* ---------- reorder (collapse is suppressed, so items are all entities) ---------- */
     function enterReorder() {
       reorderMode = true;
       app.toast('Up/Down to move, Done to finish', 1500);
-      updateSoftkeys();
+      renderRows();
+    }
+
+    function indexOfEntity(id) {
+      for (var i = 0; i < flatItems.length; i++) {
+        if (flatItems[i].kind === 'entity' && flatItems[i].id === id) return i;
+      }
+      return -1;
     }
 
     function moveFocused(delta) {
-      var id = focusedId();
-      if (!id) return;
+      var it = focusedItem();
+      if (!it || it.kind !== 'entity') return;
+      var id = it.id;
       if (opts.onMove && opts.onMove(id, delta)) {
         renderRows();
-        var ni = flatIds.indexOf(id);
+        var ni = indexOfEntity(id);
         if (ni !== -1) focus.setIndex(ni);
       }
     }
@@ -365,7 +484,7 @@
           case 'Enter':
           case 'SoftLeft':
           case 'Backspace':
-            reorderMode = false; updateSoftkeys(); return true;
+            reorderMode = false; renderRows(); return true;
         }
         return true;
       }
@@ -382,7 +501,7 @@
       }
       if (key >= '1' && key <= '9') {
         var idx = parseInt(key, 10) - 1;
-        if (idx < flatIds.length) { focus.setIndex(idx); updateSoftkeys(); }
+        if (idx < flatItems.length) { focus.setIndex(idx); updateSoftkeys(); }
         return true;
       }
       return false;
@@ -393,8 +512,10 @@
     function onRegistries() { if (rowsEl) renderRows(); }
     function onStateChanged(evt) {
       if (!rowsEl) return;
-      if (rowMap[evt.entityId]) updateRow(evt.entityId);
-      else queueRebuild();
+      var id = evt.entityId;
+      if (rowMap[id]) { updateRow(id); return; }
+      if (coveredIds[id]) return; // collapsed member; device row shows a static count
+      queueRebuild();
     }
 
     function destroy() {

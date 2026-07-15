@@ -1,25 +1,23 @@
-/* views/all.js - every entity, searchable and grouped by area (or domain when
-   registries are unavailable). ES5-safe. */
+/* views/scenes.js - dedicated list of scene entities. ES5-safe. */
 (function (global) {
   'use strict';
 
   global.HAViews = global.HAViews || {};
 
-  global.HAViews.all = function (app) {
+  global.HAViews.scenes = function (app) {
     var list = null;
 
     function render(root) {
-      app.setTitle('All devices');
+      app.setTitle('Scenes');
       list = HAEntityList(app, {
-        search: true,
-        group: function () { return app.getClient().hasRegistries() ? 'area' : 'domain'; },
-        collapseDevices: true,
         leftLabel: 'Back',
-        emptyText: 'No entities found.',
+        emptyText: 'No scenes found.',
         getIds: function () {
           var ids = [];
           var ents = app.getClient().getEntities();
-          for (var id in ents) { if (ents.hasOwnProperty(id)) ids.push(id); }
+          for (var id in ents) {
+            if (ents.hasOwnProperty(id) && id.indexOf('scene.') === 0) ids.push(id);
+          }
           return ids;
         }
       });

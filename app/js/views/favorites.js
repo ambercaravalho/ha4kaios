@@ -14,6 +14,7 @@
         ordered: true,
         showArea: true,
         reorderable: true,
+        collapseDevices: true,
         leftLabel: 'Back',
         emptyText: "No favorites yet. Open any entity's Options to add one.",
         getIds: function () { return HAStore.getFavorites(); },

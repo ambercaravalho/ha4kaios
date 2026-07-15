@@ -1,5 +1,6 @@
-/* views/home.js - top-level hub: connection card + menu (Favorites, Areas,
-   All devices, Settings). ES5-safe. */
+/* views/home.js - top-level hub: connection card + logically grouped menu
+   (Favorites, Scenes, Automations, Areas, All devices). Settings lives on the
+   right softkey. ES5-safe. */
 (function (global) {
   'use strict';
 
@@ -33,22 +34,23 @@
       card.appendChild(l2);
       container.appendChild(card);
 
-      addRow('Favorites', String(HAStore.getFavorites().length), 'favorites');
-      addRow('Areas', areaCount(), 'areas');
-      addRow('All devices', String(entityCount()), 'all');
-      addRow('Settings', '', 'settings');
+      addRow('Favorites', String(HAStore.getFavorites().length), 'favorites', 'favorites');
+      addRow('Scenes', domainCount('scene.'), 'scenes', 'scenes');
+      addRow('Automations', domainCount('automation.'), 'automations', 'automations');
+      addRow('Areas', areaCount(), 'areas', 'areas');
+      addRow('All devices', String(entityCount()), 'all', 'all');
 
       focus.refresh(true);
       updateSoftkeys();
     }
 
-    function addRow(label, meta, target) {
+    function addRow(label, meta, target, glyphKey) {
       var row = document.createElement('div');
       row.className = 'menu-row';
       row.setAttribute('data-target', target);
       var badge = document.createElement('span');
       badge.className = 'menu-row-badge';
-      badge.textContent = label.charAt(0);
+      badge.appendChild(HAIcons.forCategory(glyphKey));
       var l = document.createElement('span');
       l.className = 'menu-row-label';
       l.textContent = label;
@@ -91,6 +93,15 @@
       return n;
     }
 
+    function domainCount(prefix) {
+      var e = client() ? client().getEntities() : {};
+      var n = 0;
+      for (var k in e) {
+        if (e.hasOwnProperty(k) && k.indexOf(prefix) === 0) n++;
+      }
+      return String(n);
+    }
+
     function areaCount() {
       var c = client();
       if (!c || !c.hasRegistries()) return '-';
@@ -100,7 +111,7 @@
     function updateSoftkeys() {
       var c = client();
       var offline = c && !c.authenticated && !c.usingRest;
-      app.setSoftkeys(offline ? 'Reconnect' : '', 'Open', '');
+      app.setSoftkeys(offline ? 'Reconnect' : '', 'Open', 'Settings');
     }
 
     function open() {
@@ -115,10 +126,14 @@
         case 'Up': focus.move(-1); return true;
         case 'Down': focus.move(1); return true;
         case 'Enter': open(); return true;
+        case 'SoftRight': app.go('settings'); return true;
         case 'SoftLeft':
           if (client() && !client().authenticated) app.reconnect();
           return true;
-        case 'Backspace': return true; // root: swallow to avoid accidental exit
+        case 'Backspace':
+          // Home is the root: Back exits the app to the launcher.
+          try { window.close(); } catch (e) {}
+          return true;
       }
       return false;
     }

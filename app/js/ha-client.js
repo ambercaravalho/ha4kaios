@@ -30,7 +30,7 @@
 
     // Registries (populated over WebSocket after auth; empty on REST fallback).
     this.areas = {};        // area_id -> { name }
-    this.deviceArea = {};   // device_id -> area_id
+    this.deviceMeta = {};   // device_id -> { name, areaId }
     this.entityMeta = {};   // entity_id -> { areaId, deviceId, category, hidden, name }
     this.registriesLoaded = false;
     this.registryRefetchTimer = null;
@@ -206,7 +206,7 @@
 
   HAClient.prototype.buildRegistries = function (areas, devices, entityDisplay) {
     var i, a, d;
-    var areaMap = {}, deviceArea = {}, entityMeta = {};
+    var areaMap = {}, deviceMeta = {}, entityMeta = {};
 
     if (areas && areas.length) {
       for (i = 0; i < areas.length; i++) {
@@ -217,7 +217,12 @@
     if (devices && devices.length) {
       for (i = 0; i < devices.length; i++) {
         d = devices[i];
-        if (d && d.id) deviceArea[d.id] = d.area_id || null;
+        if (d && d.id) {
+          deviceMeta[d.id] = {
+            name: d.name_by_user || d.name || null,
+            areaId: d.area_id || null
+          };
+        }
       }
     }
     // list_for_display returns { entities: [ {ei, ai, di, ec, hb, en} ], ... }
@@ -235,7 +240,7 @@
     }
 
     this.areas = areaMap;
-    this.deviceArea = deviceArea;
+    this.deviceMeta = deviceMeta;
     this.entityMeta = entityMeta;
   };
 
@@ -262,8 +267,33 @@
     var meta = this.entityMeta[entityId];
     if (!meta) return null;
     if (meta.areaId) return meta.areaId;
-    if (meta.deviceId && this.deviceArea[meta.deviceId]) return this.deviceArea[meta.deviceId];
+    if (meta.deviceId && this.deviceMeta[meta.deviceId] &&
+        this.deviceMeta[meta.deviceId].areaId) {
+      return this.deviceMeta[meta.deviceId].areaId;
+    }
     return null;
+  };
+
+  // Device id for an entity (from the entity registry), else null.
+  HAClient.prototype.getEntityDevice = function (entityId) {
+    var meta = this.entityMeta[entityId];
+    return meta && meta.deviceId ? meta.deviceId : null;
+  };
+
+  // Registry name for a device, else null (caller falls back to entity name).
+  HAClient.prototype.getDeviceName = function (deviceId) {
+    var d = this.deviceMeta[deviceId];
+    return d && d.name ? d.name : null;
+  };
+
+  // Entity ids in the current state cache that belong to a device.
+  HAClient.prototype.getDeviceEntities = function (deviceId) {
+    var ids = [];
+    for (var id in this.entities) {
+      if (!this.entities.hasOwnProperty(id)) continue;
+      if (this.getEntityDevice(id) === deviceId) ids.push(id);
+    }
+    return ids;
   };
 
   HAClient.prototype.getAreaName = function (areaId) {
