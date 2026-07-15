@@ -5,6 +5,17 @@ softkeys. Navigation uses a back-stack: **Back** returns to the previous screen,
 and **Home** is the root (Back there does nothing, so you never exit by
 accident). The last top-level screen you visited is restored on the next launch.
 
+## Controls
+
+| Key            | List view                          | Detail view                    |
+| -------------- | ---------------------------------- | ------------------------------ |
+| Up / Down      | Move selection (or search)         | Move between controls          |
+| Left / Right   | -                                  | Adjust value (brightness/temp) |
+| Center / Enter | Primary action (toggle / open)     | Activate focused control       |
+| 1-9            | Jump to the nth row                | -                              |
+| Left softkey   | `Back`                             | `Back`                         |
+| Right softkey  | `Details` (`Reorder` on Favorites) | `Fav` / `Unfav`                |
+
 ## Screens
 
 ```mermaid
@@ -55,15 +66,7 @@ individual entities.
 ## Lists
 
 Every list (Favorites, Scenes, Automations, Area entities, Device entities, All)
-shares one component:
-
-| Key            | Action                                         |
-| -------------- | ---------------------------------------------- |
-| Up / Down      | Move selection                                 |
-| Center / Enter | Primary action (toggle / activate / open)      |
-| 1-9            | Jump to the nth row                            |
-| Left softkey   | `Back`                                         |
-| Right softkey  | `Details` (`Reorder` on Favorites)             |
+shares one component with the keys in [Controls](#controls) above.
 
 The right softkey opens the focused entity's **Details** screen. On the
 Favorites list it instead reads `Reorder` and enters reorder mode. A collapsed

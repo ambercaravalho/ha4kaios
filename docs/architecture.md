@@ -45,18 +45,26 @@ A view is a factory `HAViews.name(app)` returning:
 - `destroy()` - cleanup.
 - optional `onStates()` / `onStateChanged(evt)` / `onRegistries()` /
   `onStatus(info)` - live-data hooks.
+- optional `saveState()` / `restoreState(s)` - persist and restore view state
+  (e.g. list focus position) across back-stack navigation.
 
 Only `app.js` subscribes to the client. It forwards updates to the active view's
 hooks, so there are no per-view listener leaks. List-style views delegate their
 work to the shared `HAEntityList` component.
 
-## Navigation and back-stack
+## Navigation
 
-`app.js` keeps a stack of `{ name, params }` entries. `go(name, params, opts)`
-pushes (or `replace`/`root`), and `back()` pops to the previous screen; Home is
-the root, so Back never exits accidentally. The last top-level screen is saved to
+`HANav.attach(handler)` installs one global `keydown` listener and normalizes
+events to logical keys (`Up`, `Down`, `Left`, `Right`, `Enter`, `SoftLeft`,
+`SoftRight`, `Backspace`, and digit keys `0`-`9`). `app.js` keeps a stack of
+`{ name, params, state }` entries and routes each key to the overlay (if any) or
+the active view. `go(name, params, opts)` pushes (or `replace`/`root`), and
+`back()` pops to the previous screen; Home is the root, so Back never exits
+accidentally. Each entry can carry a view's saved `state` (e.g. list focus
+position), restored when it re-renders, and the last top-level screen is saved to
 `HAStore` and restored on the next launch. An **overlay** hook lets `HAMenu`
-intercept keys while a menu is open.
+intercept keys while a menu is open. List views use `HANav.FocusList` to move a
+`focused` class across rows and scroll the selection into view.
 
 ## Data layer (registries + prefs)
 
@@ -84,11 +92,3 @@ flowchart LR
 The client keeps an in-memory `entities` cache (`entity_id -> state`). On a
 `state_changed` event it patches the single entity and emits `state_changed`;
 `get_states` (or a REST poll) replaces the cache and emits `states`.
-
-## Navigation
-
-`HANav.attach(handler)` installs one global `keydown` listener and normalizes
-events to logical keys (`Up`, `Down`, `Left`, `Right`, `Enter`, `SoftLeft`,
-`SoftRight`, `Backspace`, and digit keys `0`-`9`). `app.js` routes them to the
-overlay (if any) or the active view. List views use `HANav.FocusList` to move a
-`focused` class across rows and scroll the selection into view.

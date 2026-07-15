@@ -54,18 +54,19 @@ The header status pill shows `rest` while the fallback is active.
 
 ## Supported domains
 
-The list view groups entities and the detail view offers controls for:
+The detail view builds per-domain controls that map to Home Assistant services,
+for example:
 
-- `light` - toggle, brightness (`light.turn_on` with `brightness_pct`).
-- `switch` / `input_boolean` - toggle.
-- `scene` - activate (`scene.turn_on`).
-- `climate` - HVAC mode (`climate.set_hvac_mode`) and target temperature
-  (`climate.set_temperature`).
-- `sensor` / `binary_sensor` - read-only.
+- `light` - toggle plus brightness (`light.turn_on` with `brightness_pct`).
+- `switch` / `input_boolean` / `siren` - toggle.
+- `scene` / `script` / `button` - activate, run, or press.
+- `cover` / `fan` / `climate` / `media_player` - open/close, speed, HVAC mode
+  and target temperature, playback/volume.
+- `number` / `select` (and their `input_*` variants) - set value or option.
 
-All other domains are listed read-only with their full attribute set.
-
-## Security note
+Anything without a builder is listed read-only with its full attribute set. See
+[`app/js/domains.js`](../app/js/domains.js) for the complete control map.
 
 Values received from Home Assistant are rendered with `textContent` (never
-`innerHTML`) so entity/attribute strings cannot inject markup or script.
+`innerHTML`); the full security posture is in the
+[README Security section](../README.md#security).

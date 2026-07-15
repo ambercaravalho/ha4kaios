@@ -7,8 +7,8 @@ a REST fallback.
 
 ## Features
 
-- **Home hub** with Favorites, Areas, All devices, and Settings, plus a
-  connection/last-updated line.
+- **Home hub** with Favorites, Areas, Scenes, Automations, All devices, and
+  Settings, plus a connection/last-updated line.
 - **Area grouping** from Home Assistant's registries, a searchable **All
   devices** screen, and a local **favorites dashboard** with reorder.
 - **Smart sorting** (controllable + active first) with Name / Status modes, and
@@ -25,8 +25,8 @@ a REST fallback.
 ## Requirements
 
 - A reachable Home Assistant instance (e.g. `http://192.168.1.10:8123`).
-- A long-lived access token: **Profile -> Security -> Long-Lived Access Tokens ->
-  Create Token**.
+- A long-lived access token (see
+  [Authentication](docs/home-assistant-api.md#authentication)).
 - A KaiOS 2.5 device, or an old Firefox / the KaiOS simulator for testing.
 
 ## Quick start
@@ -41,17 +41,11 @@ then launch **HA4KaiOS**, enter your URL, scan or paste the token, and press
 
 ## Controls
 
-| Key            | List view                    | Detail view                    |
-| -------------- | ---------------------------- | ------------------------------ |
-| Up / Down      | Move selection (or search)   | Move between controls          |
-| Left / Right   | -                            | Adjust value (brightness/temp) |
-| Center / Enter | Primary action (toggle/open) | Activate focused control       |
-| 1-9            | Jump to the nth row          | -                              |
-| Left softkey   | `Back`                       | `Back`                         |
-| Right softkey  | `Details` (`Reorder` on Favorites) | `Fav` / `Unfav`          |
-
-Back returns to the previous screen (Home is the root). See the
-[UI guide](docs/ui.md) for screens, sorting, favorites, and search.
+The D-pad moves the selection, Center acts on it (toggle / activate / open), and
+the two softkeys are labelled per screen. Back returns to the previous screen;
+Home is the root, so Back there never exits by accident. See the
+[UI guide](docs/ui.md#controls) for the full key reference, screens, sorting,
+favorites, and search.
 
 ## Project layout
 
@@ -62,7 +56,7 @@ app/                # everything that ships in the packaged app
   css/app.css       # small-screen styles + dark/light themes
   js/               # config, store, xhr, ha-client, format, nav, qr, domains, app
   js/components/    # reusable entity list + menu overlay
-  js/views/         # setup, home, areas, favorites, all, detail, settings
+  js/views/         # one file per screen (setup, home, lists, detail, settings)
   js/vendor/        # jsQR (vendored QR decoder)
   icons/            # 56 / 112 px app icons
 docs/               # wiki (deep-dive documentation)
@@ -71,12 +65,8 @@ build/              # build.sh + generated application.zip
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [UI guide](docs/ui.md)
-- [KaiOS 2.5 constraints](docs/kaios-constraints.md)
-- [Home Assistant API](docs/home-assistant-api.md)
-- [QR token scanning](docs/qr-scanning.md)
-- [Packaging & install](docs/packaging-and-install.md)
+Deep-dive guides live in the [docs wiki](docs/README.md): architecture, UI,
+KaiOS constraints, the Home Assistant API, QR scanning, and packaging/install.
 
 ## Security
 

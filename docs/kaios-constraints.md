@@ -40,11 +40,10 @@ same-origin/CORS for a normal web app. Workarounds:
 
 ## Camera / getUserMedia
 
-Used only for QR scanning. `getUserMedia` requires the **`video-capture`**
-manifest permission (not `camera`, which is for the low-level Camera API and
-does not grant `getUserMedia`). Gecko 48 also predates the modern, promise-only
-`navigator.mediaDevices` guarantees, and stream attachment differs across
-builds. `js/qr.js` handles this with fallbacks - see
+Used only for QR scanning, which needs the **`video-capture`** manifest
+permission. Gecko 48 predates the modern promise-only `navigator.mediaDevices`
+guarantees and stream attachment differs across builds, so `js/qr.js` relies on
+fallbacks. Details, including why `video-capture` rather than `camera`, are in
 [QR token scanning](qr-scanning.md).
 
 ## Hardware / UX
