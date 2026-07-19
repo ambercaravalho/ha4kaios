@@ -7,9 +7,9 @@ talks to your own Home Assistant using a long-lived access token over WebSocket
 
 ## Features
 
-- **Home hub** with Favorites, Areas, Scenes, Automations, All devices, and
-  Settings, area grouping from HA's registries, and a searchable All-devices
-  screen.
+- **Home hub** with Favorites, Areas, Scenes, Automations, All devices,
+  Settings, and a direct search entry; area grouping from HA's registries and a
+  searchable All-devices screen.
 - Control lights (brightness), switches, fans, covers, locks, climate, media
   players, scenes/scripts, buttons, numbers, and selects; read-only for the rest.
 - **Smart sorting**, a local favorites dashboard with reorder, and dark/light

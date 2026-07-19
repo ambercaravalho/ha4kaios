@@ -17,46 +17,65 @@
   --list-item-h: 60px;
   --separator-h: 24px;
 
-  /* Dark theme (default) */
-  --bg: #12151c;
-  --surface: #1c212b;
+  /* Dark theme (default). One blue hue family across accent + header so the
+     whole app reads as a single palette. */
+  --bg: #11141b;
+  --surface: #1a1f28;
   --surface2: #232b38;
+  --surface3: #2c3543;       /* elevated: chips, badges */
   --fg: #eef1f5;
   --fg-sec: #9aa7b6;
   --fg-ter: #7c8a9b;
   --border: #2b333f;
-  --section-fg: #8c8c8c;
+  --section-fg: #8c9aa9;
 
-  --accent: #03a9f4;         /* Home Assistant blue - focus/highlight */
+  --accent: #29b6f6;         /* Home Assistant blue - focus/highlight */
+  --accent-strong: #039be5;  /* pressed / primary-focused */
   --accent-fg: #ffffff;
-  --header-bg: #21407a;      /* KaiOS-style dark header */
+  --accent-soft: rgba(41, 182, 246, 0.16); /* subtle tint (badges, hints) */
+  --header-bg: #0d3a5c;      /* deep blue in the same hue as the accent */
   --header-fg: #ffffff;
 
+  /* Semantic entity-state colors */
   --on: #ffd54f;
+  --state-on: #ffd54f;       /* on / lit */
+  --state-active: #4caf50;   /* active but not "on" (e.g. playing, open) */
+  --state-unavailable: #6b7280;
   --destructive: #e2443a;
 
-  /* Softkey bar stays light in both themes (KaiOS convention) */
-  --sk-bg: #cccccc;
-  --sk-fg: #323232;
-  --sk-active: #00aacc;
+  /* Softkey bar, themed (dark by default to match the app chrome) */
+  --sk-bg: #1c2431;
+  --sk-fg: #e7ecf2;
+  --sk-active: #039be5;
 }
 
 body.theme-light {
   --bg: #eef1f5;
   --surface: #ffffff;
-  --surface2: #e6f2fb;
+  --surface2: #e9eef4;
+  --surface3: #dde6f0;
   --fg: #1a1f28;
-  --fg-sec: #6a6a6a;
-  --fg-ter: #8c8c8c;
+  --fg-sec: #5a6572;
+  --fg-ter: #8c98a6;
   --border: #d7dde5;
-  --section-fg: #6a6a6a;
+  --section-fg: #5a6572;
 
   --accent: #0288d1;
+  --accent-strong: #0277bd;
   --accent-fg: #ffffff;
-  --header-bg: #21407a;
+  --accent-soft: rgba(2, 136, 209, 0.12);
+  --header-bg: #0288d1;      /* HA blue header on the light theme */
   --header-fg: #ffffff;
 
   --on: #b26a00;
+  --state-on: #b26a00;
+  --state-active: #2e7d32;
+  --state-unavailable: #9aa7b6;
+
+  /* Classic light-gray softkey bar on the light theme */
+  --sk-bg: #cccccc;
+  --sk-fg: #323232;
+  --sk-active: #0288d1;
 }
 
 /* ----------------------------------------------------------------------------
@@ -89,6 +108,14 @@ html, body {
   height: 100%;
 }
 
+/* Form controls don't inherit typography by default (they fall back to a serif
+   UA font), so pull them back to the app's Open Sans stack. */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: 14px;
+  color: inherit;
+}
+
 /* ----------------------------------------------------------------------------
    Header (centered title + status dot)
 ---------------------------------------------------------------------------- */
@@ -103,8 +130,23 @@ html, body {
   color: var(--header-fg);
 }
 
+/* Small brand mark on the left of the header. */
+.header-brand {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--header-fg);
+}
+.header-brand svg { width: 18px; height: 18px; display: block; }
+
 #header-title {
-  max-width: calc(100% - 48px);
+  max-width: calc(100% - 120px);
   font-size: 17px;
   font-weight: 400;              /* KaiOS H1 header text = Regular/400 */
   line-height: var(--header-h);
@@ -114,23 +156,40 @@ html, body {
   text-overflow: ellipsis;
 }
 
-/* Connection status shown as a small colored dot on the right. */
+/* Connection status: a compact pill (colored dot + short readable label) on
+   the right so state is legible at a glance, not just a bare dot. */
 .status {
   position: absolute;
   top: 50%;
-  right: 8px;
-  width: 10px;
-  height: 10px;
-  margin-top: -5px;
-  border-radius: 50%;
-  font-size: 0;              /* hide the textual label */
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px 0 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--header-fg);
+  background: rgba(255, 255, 255, 0.16);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.status-online { background: #4caf50; }
-.status-offline { background: #e2443a; }
-.status-connecting { background: #fbbd3c; }
+.status::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--dot, #4caf50);
+}
+
+.status-online { --dot: #4caf50; }
+.status-offline { --dot: #e2443a; }
+.status-connecting { --dot: #fbbd3c; }
 
 /* ----------------------------------------------------------------------------
    Main scroll area
@@ -154,6 +213,7 @@ html, body {
   align-items: stretch;
   background: var(--sk-bg);
   color: var(--sk-fg);
+  border-top: 1px solid var(--border);
 }
 
 .softkey {
@@ -205,19 +265,23 @@ html, body {
 
 .row.focused { background: var(--accent); color: var(--accent-fg); }
 
+/* Unavailable / unknown entities read as dimmed. */
+.row.is-unavailable { opacity: 0.5; }
+
 .row-badge {
   flex: 0 0 auto;
   width: 32px;
   height: 32px;
-  line-height: 32px;
   margin-right: 10px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 6px;
-  background: var(--surface2);
-  color: var(--accent);
+  border-radius: 8px;
+  background: var(--surface3);
+  color: var(--fg-ter);
 }
+
+/* The glyph lights up by state: muted when off, accent when active, amber
+   when on/lit - so a list scans like a smart-home remote. */
+.row.is-active .row-badge { color: var(--accent); }
+.row.is-on .row-badge { color: var(--state-on); }
 
 .row.focused .row-badge {
   background: rgba(255, 255, 255, 0.22);
@@ -245,20 +309,26 @@ html, body {
 
 .row.focused .row-sub { color: #e3f3fc; }
 
+/* State value as a subtle chip. */
 .row-value {
   flex: 0 0 auto;
   margin-left: 8px;
-  font-size: 14px;
+  max-width: 92px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--surface3);
+  color: var(--fg-sec);
+  font-size: 12px;
   font-weight: 700;
-  text-align: right;
-  max-width: 90px;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.state-on { color: var(--on); }
-.row.focused .state-on { color: #fff; }
+.row.is-active .row-value { color: var(--accent); }
+.row.is-on .row-value { color: var(--state-on); }
+.row.focused .row-value { background: rgba(255, 255, 255, 0.2); color: #fff; }
 
 /* Glyph badges: center the inline SVG inside the fixed-size tile. */
 .row-badge, .menu-row-badge {
@@ -272,15 +342,19 @@ html, body {
   display: block;
 }
 
-/* Drill-in affordance for collapsed device rows. */
-.row-chevron {
+/* Drill-in chevron: one shared mechanism (CSS ::after) for navigational
+   menu-rows and collapsed device rows (rows tagged .has-chevron). */
+.menu-row::after,
+.row.has-chevron::after {
+  content: "\203A";
   flex: 0 0 auto;
   margin-left: 6px;
   font-size: 18px;
   line-height: 1;
-  color: var(--fg-sec);
+  color: var(--fg-ter);
 }
-.row.focused .row-chevron { color: #fff; }
+.menu-row.focused::after,
+.row.has-chevron.focused::after { color: #fff; }
 
 /* ----------------------------------------------------------------------------
    Menu rows (home / areas / settings navigational lists)
@@ -328,17 +402,6 @@ html, body {
 
 .menu-row.focused .menu-row-meta { color: #e3f3fc; }
 
-/* Right chevron affordance for navigational rows. */
-.menu-row::after {
-  content: "\203A";
-  flex: 0 0 auto;
-  margin-left: 6px;
-  font-size: 18px;
-  color: var(--fg-ter);
-}
-
-.menu-row.focused::after { color: #fff; }
-
 /* ----------------------------------------------------------------------------
    Section separators
 ---------------------------------------------------------------------------- */
@@ -373,12 +436,12 @@ html, body {
 }
 .search {
   width: 100%;
-  padding: 6px;
+  padding: 8px 10px;
   font-size: 14px;
   background: var(--surface);
   color: var(--fg);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 8px;
 }
 .search:focus { border-color: var(--accent); outline: none; }
 
@@ -391,16 +454,16 @@ html, body {
   display: block;
   font-size: 12px;
   color: var(--fg-sec);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 .field input {
   width: 100%;
-  padding: 6px;
+  padding: 8px 10px;
   font-size: 14px;
   background: var(--surface);
   color: var(--fg);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 8px;
 }
 .field input:focus { border-color: var(--accent); outline: none; }
 .hint {
@@ -408,6 +471,50 @@ html, body {
   color: var(--fg-ter);
   padding: 0 10px 10px;
   line-height: 1.4;
+}
+
+/* Action buttons (setup: Scan / Connect). Distinct from navigational menu-rows
+   so they carry no drill-in chevron. */
+.btn {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 10px 8px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+.btn.focused {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.btn-badge {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.btn.focused .btn-badge { color: #fff; }
+.btn-badge svg { width: 20px; height: 20px; display: block; }
+.btn-label { flex: 1 1 auto; font-size: 16px; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+.btn-primary .btn-badge { color: var(--accent-fg); }
+.btn-primary.focused {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 /* ----------------------------------------------------------------------------
@@ -422,20 +529,27 @@ html, body {
   word-break: break-all;
 }
 
+/* Controls live inside a single rounded card, as seamless rows. The top margin
+   keeps the card off the section bar above it. */
+.control-group {
+  margin: 8px 10px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
 .control {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 48px;
-  padding: 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
 }
+.control:last-child { border-bottom: none; }
 .control.focused {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--accent-fg);
 }
 .control-label { font-size: 14px; color: var(--fg-sec); }
@@ -582,5 +696,23 @@ html, body {
   font-size: 12px;
   text-shadow: 0 1px 2px #000;
 }
+
+/* ----------------------------------------------------------------------------
+   Motion - lightweight and Gecko-48-safe (opacity/transform only, short
+   durations, no per-frame JS). Focus highlights ease in; screens and the toast
+   animate on entry.
+---------------------------------------------------------------------------- */
+/* Plain cross-fade on screen entry - no slide (slides render poorly on device). */
+@keyframes viewIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.view-in { animation: viewIn 120ms ease-out; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast { animation: toastIn 160ms ease-out; }
 
 .hidden { display: none; }

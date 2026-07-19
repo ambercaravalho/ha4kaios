@@ -99,6 +99,41 @@
     marqueeAnims.push(anim);
   }
 
+  /* Scrolling helpers. The app has a single scroll region (#main); focus moves
+     should nudge it only as much as needed, never snap the focused element to a
+     viewport edge (which makes the whole page jump). */
+  function scrollRegion() { return document.getElementById('main'); }
+
+  // Distance from an element's top to the top of the scroll region, summed up
+  // the offsetParent chain so nested/positioned wrappers stay correct.
+  function offsetTopWithin(el, main) {
+    var y = 0;
+    var node = el;
+    while (node && node !== main) { y += node.offsetTop; node = node.offsetParent; }
+    return y;
+  }
+
+  function isFullyVisible(el) {
+    var main = scrollRegion();
+    if (!main || !el) return true;
+    var top = offsetTopWithin(el, main);
+    var bottom = top + el.offsetHeight;
+    return top >= main.scrollTop && bottom <= main.scrollTop + main.clientHeight;
+  }
+
+  function scrollIntoViewIfNeeded(el) {
+    var main = scrollRegion();
+    if (!el) return;
+    if (!main) { if (el.scrollIntoView) el.scrollIntoView(false); return; }
+    var top = offsetTopWithin(el, main);
+    var bottom = top + el.offsetHeight;
+    var viewTop = main.scrollTop;
+    var viewBottom = viewTop + main.clientHeight;
+    if (top < viewTop) main.scrollTop = top;                 // above view: reveal at top
+    else if (bottom > viewBottom) main.scrollTop = bottom - main.clientHeight; // below: reveal at bottom
+    // otherwise already fully visible: leave the scroll position alone
+  }
+
   /* FocusList: manage a moving focus among a set of item elements inside a
      scroll container. Items are matched by CSS class name. */
   function FocusList(container, itemClass) {
@@ -131,17 +166,23 @@
       }
     }
     var el = this.items[this.index];
-    if (el && el.scrollIntoView) {
-      el.scrollIntoView(false);
+    if (this.index === 0) {
+      // Focusing the first row scrolls fully to the top so any content above it
+      // (the home connection card, a search box, a section header) stays visible.
+      var main = document.getElementById('main');
+      if (main) main.scrollTop = 0; else scrollIntoViewIfNeeded(el);
+    } else {
+      scrollIntoViewIfNeeded(el);
     }
     startMarquee(el);
   };
 
   FocusList.prototype.move = function (delta) {
-    if (!this.items.length) return;
-    var next = this.index + delta;
-    if (next < 0) next = 0;
-    if (next > this.items.length - 1) next = this.items.length - 1;
+    var n = this.items.length;
+    if (!n) return;
+    // Wrap around: past the bottom returns to the top and vice versa.
+    var next = (this.index + delta) % n;
+    if (next < 0) next += n;
     if (next === this.index) return;
     this.index = next;
     this.apply();
@@ -165,6 +206,8 @@
     normalizeKey: normalizeKey,
     attach: attach,
     FocusList: FocusList,
-    stopMarquee: stopMarquee
+    stopMarquee: stopMarquee,
+    isFullyVisible: isFullyVisible,
+    scrollIntoViewIfNeeded: scrollIntoViewIfNeeded
   };
 })(window);

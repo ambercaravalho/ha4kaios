@@ -1,7 +1,7 @@
 {
   "name": "HA4KaiOS",
-  "description": "Home Assistant client for KaiOS 2.5 feature phones",
-  "version": "0.1.0",
+  "description": "Home Assistant client for KaiOS 2.5, 3.0, 3.1, and 4.0 feature phones",
+  "version": "0.2.0",
   "launch_path": "/index.html",
   "type": "privileged",
   "developer": {

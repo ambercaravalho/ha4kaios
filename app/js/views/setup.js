@@ -21,10 +21,11 @@
       var cfg = HAConfig.load();
 
       // Static structure only (no server data) -> innerHTML is CSP-safe here.
-      // Action rows use the shared menu-row convention; their icon badges are
-      // appended as real SVG nodes below (SVG isn't injected as inline HTML).
+      // Action buttons use the .btn convention (not menu-row) so they carry no
+      // drill-in chevron; their icon badges are appended as real SVG nodes
+      // below (SVG isn't injected as inline HTML).
       container.innerHTML =
-        '<div class="section">Connection</div>' +
+        '<div class="section">Connect to Home Assistant</div>' +
         '<div class="form">' +
         '  <div class="field">' +
         '    <label for="ha-url">Home Assistant URL</label>' +
@@ -35,13 +36,13 @@
         '    <input id="ha-token" type="password" placeholder="Paste or scan token" />' +
         '  </div>' +
         '</div>' +
-        '<div id="ha-scan" class="menu-row">' +
-        '  <span class="menu-row-badge"></span>' +
-        '  <span class="menu-row-label">Scan token QR</span>' +
+        '<div id="ha-scan" class="btn">' +
+        '  <span class="btn-badge"></span>' +
+        '  <span class="btn-label">Scan token QR</span>' +
         '</div>' +
-        '<div id="ha-connect" class="menu-row">' +
-        '  <span class="menu-row-badge"></span>' +
-        '  <span class="menu-row-label">Connect</span>' +
+        '<div id="ha-connect" class="btn btn-primary">' +
+        '  <span class="btn-badge"></span>' +
+        '  <span class="btn-label">Connect</span>' +
         '</div>' +
         '<div class="section">Help</div>' +
         '<div class="hint">Create a token in Home Assistant: Profile &raquo; Security &raquo; ' +
@@ -71,15 +72,21 @@
     }
 
     function addBadge(row, glyph) {
-      var badge = row.getElementsByClassName('menu-row-badge')[0];
+      var badge = row.getElementsByClassName('btn-badge')[0];
       if (badge) badge.appendChild(HAIcons.svg(glyph));
+    }
+
+    function baseClass(el) {
+      if (el === connectBtn) return 'btn btn-primary';
+      if (el === scanBtn) return 'btn';
+      return '';
     }
 
     function applyFocus() {
       for (var i = 0; i < focusables.length; i++) {
         var el = focusables[i];
         if (isButton(el)) {
-          el.className = (i === focusIndex) ? 'menu-row focused' : 'menu-row';
+          el.className = (i === focusIndex) ? baseClass(el) + ' focused' : baseClass(el);
         }
         if (i === focusIndex) {
           if (isButton(el)) {
@@ -98,12 +105,14 @@
         app.setSoftkeys('Cancel', '', '');
         return;
       }
+      // Center is the single, contextual primary action; there is no redundant
+      // right-softkey Connect while typing in a field.
       var focused = focusables[focusIndex];
-      var center = '';
-      if (focused === scanBtn) center = 'SCAN';
-      else if (focused === connectBtn) center = 'CONNECT';
+      var center = 'Next';
+      if (focused === scanBtn) center = 'Scan';
+      else if (focused === connectBtn) center = 'Connect';
       var left = app.hasClient() ? 'Back' : '';
-      app.setSoftkeys(left, center, 'Connect');
+      app.setSoftkeys(left, center, '');
     }
 
     function move(delta) {
@@ -160,7 +169,7 @@
       if (!token) { app.toast('Enter a token'); return; }
 
       busy = true;
-      app.toast('Connecting...', 0);
+      app.toast('Connecting\u2026', 0);
       HAClient.testConnection(url, token).then(function () {
         busy = false;
         app.clearToast();
@@ -194,9 +203,6 @@
           if (focusables[focusIndex] === scanBtn) { startScan(); }
           else if (focusables[focusIndex] === connectBtn) { doConnect(); }
           else { move(1); }
-          return true;
-        case 'SoftRight':
-          doConnect();
           return true;
         case 'SoftLeft':
           if (app.hasClient()) { app.back(); return true; }

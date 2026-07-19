@@ -51,6 +51,26 @@ build/   build.sh and the generated application-*.zip packages.
 - Validate the manifests: both `manifest.webapp` and `manifest.webmanifest` must
   be valid JSON.
 
+## Install on a device (appscmd)
+
+Use the official KaiOS `appscmd` tool (binary at `build/appscmd`) over the
+Firefox debugger socket. It uploads the app folder itself, so pass a **local
+host path** (e.g. `app`), not an on-device path, and do NOT push files to the
+device manually.
+
+```bash
+adb root
+adb forward tcp:6000 localfilesystem:/data/local/debugger-socket
+./build/appscmd install app        # local path; uploads over the socket
+./build/appscmd list               # verify: look for "ha4kaios | Enabled | Installed"
+```
+
+- Works for KaiOS 3.0/3.1/4.0. `appscmd` picks `manifest.webmanifest`, so
+  installing the whole `app/` folder (with both manifests present) is fine.
+- Do NOT use `--socket <path>` for a device (that form is for the
+  simulator/desktop); the default connects to the forwarded `tcp:6000`.
+- Only install/launch on the device when explicitly asked.
+
 ## Git & pushes
 
 - **Only commit or push when explicitly asked.**

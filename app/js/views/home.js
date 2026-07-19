@@ -1,6 +1,6 @@
 /* views/home.js - top-level hub: connection card + logically grouped menu
-   (Favorites, Areas, Scenes, Automations, All devices). Settings lives on the
-   left softkey. ES5-safe. */
+   (Favorites, Areas, Scenes, Automations, All devices, Search). Settings lives
+   on the left softkey. ES5-safe. */
 (function (global) {
   'use strict';
 
@@ -68,14 +68,18 @@
       if (!c) return 'Not connected';
       if (c.authenticated) return 'Connected';
       if (c.usingRest) return 'Connected (REST)';
-      if (c.status === 'connecting') return 'Connecting...';
+      if (c.status === 'connecting') return 'Connecting\u2026';
       return 'Offline';
     }
 
     function updatedText() {
       var c = client();
-      var n = c ? entityCount() : 0;
-      var ts = c ? c.getLastUpdate() : 0;
+      if (!c) return 'Open Settings to configure';
+      if (!c.authenticated && !c.usingRest) {
+        return c.status === 'connecting' ? 'Reconnecting\u2026' : 'Press Reconnect to retry';
+      }
+      var n = entityCount();
+      var ts = c.getLastUpdate();
       if (!ts) return n + ' entities';
       return n + ' entities \u00b7 updated ' + timeOf(ts);
     }
@@ -108,10 +112,15 @@
       return String(c.getAreas().length);
     }
 
-    function updateSoftkeys() {
+    function isOffline() {
       var c = client();
-      var offline = c && !c.authenticated && !c.usingRest;
-      app.setSoftkeys('Settings', 'Open', offline ? 'Reconnect' : '');
+      return !!(c && !c.authenticated && !c.usingRest);
+    }
+
+    function updateSoftkeys() {
+      // Right softkey: Reconnect when offline, otherwise a shortcut into the
+      // searchable All-devices list.
+      app.setSoftkeys('Settings', 'Open', isOffline() ? 'Reconnect' : 'Search');
     }
 
     function open() {
@@ -128,7 +137,8 @@
         case 'Enter': open(); return true;
         case 'SoftLeft': app.go('settings'); return true;
         case 'SoftRight':
-          if (client() && !client().authenticated) app.reconnect();
+          if (isOffline()) app.reconnect();
+          else app.go('all', { focusSearch: true });
           return true;
         case 'Backspace':
           // Home is the root: Back exits the app to the launcher.

@@ -8,7 +8,7 @@
   global.HAViews.all = function (app) {
     var list = null;
 
-    function render(root) {
+    function render(root, params) {
       app.setTitle('All devices');
       list = HAEntityList(app, {
         search: true,
@@ -24,6 +24,8 @@
         }
       });
       list.render(root);
+      // Opened via Home's "Search devices": jump straight to the search box.
+      if (params && params.focusSearch && list.focusSearch) list.focusSearch();
     }
 
     return {

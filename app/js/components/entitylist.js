@@ -198,7 +198,7 @@
         var msg = document.createElement('div');
         msg.className = 'message';
         if (searchText) msg.textContent = 'No matches.';
-        else if (!client().authenticated && !client().usingRest) msg.textContent = 'Connecting...';
+        else if (!client().authenticated && !client().usingRest) msg.textContent = 'Connecting\u2026';
         else msg.textContent = opts.emptyText || 'Nothing here yet.';
         rowsEl.appendChild(msg);
         updateSoftkeys();
@@ -230,12 +230,23 @@
       return item.kind === 'device' ? buildDeviceRow(item) : buildEntityRow(item.id);
     }
 
+    // Base row classes (without focus) reflecting the entity's state, so the
+    // badge/value can light up by state and unavailable rows dim.
+    function entityRowClass(e) {
+      if (!e) return 'row is-unavailable';
+      var st = e.state;
+      if (st === 'unavailable' || st === 'unknown') return 'row is-unavailable';
+      if (HAFmt.isOn(e)) return 'row is-on';
+      if (HAFmt.isActive(e)) return 'row is-active';
+      return 'row';
+    }
+
     function buildEntityRow(id) {
       var ents = entities();
       var e = ents[id];
 
       var row = document.createElement('div');
-      row.className = 'row';
+      row.className = entityRowClass(e);
       row.setAttribute('data-entity', id);
 
       var badge = document.createElement('span');
@@ -254,7 +265,7 @@
       main.appendChild(sub);
 
       var value = document.createElement('span');
-      value.className = 'row-value' + (HAFmt.isActive(e) ? ' state-on' : '');
+      value.className = 'row-value';
       value.textContent = e ? HAFmt.displayState(e) : 'n/a';
 
       row.appendChild(badge);
@@ -267,7 +278,8 @@
 
     function buildDeviceRow(item) {
       var row = document.createElement('div');
-      row.className = 'row';
+      // .has-chevron draws the shared drill-in chevron via CSS ::after.
+      row.className = 'row has-chevron';
       row.setAttribute('data-device', item.deviceId);
 
       var badge = document.createElement('span');
@@ -285,13 +297,8 @@
       main.appendChild(name);
       main.appendChild(sub);
 
-      var chev = document.createElement('span');
-      chev.className = 'row-chevron';
-      chev.textContent = '\u203A'; // ›
-
       row.appendChild(badge);
       row.appendChild(main);
-      row.appendChild(chev);
       return row;
     }
 
@@ -318,7 +325,9 @@
       ref.name.textContent = HAFmt.friendlyName(e);
       ref.sub.textContent = subtitle(id, e);
       ref.value.textContent = HAFmt.displayState(e);
-      ref.value.className = 'row-value' + (HAFmt.isActive(e) ? ' state-on' : '');
+      // Recompute the state class, preserving the focus highlight if present.
+      var focused = /(^|\s)focused(\s|$)/.test(ref.row.className);
+      ref.row.className = entityRowClass(e) + (focused ? ' focused' : '');
     }
 
     function queueRebuild() {
@@ -523,7 +532,8 @@
       destroy: destroy,
       saveState: saveState,
       restoreState: restoreState,
-      refresh: function () { if (rowsEl) renderRows(); }
+      refresh: function () { if (rowsEl) renderRows(); },
+      focusSearch: function () { focusSearch(); }
     };
   }
 

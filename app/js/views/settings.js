@@ -24,7 +24,7 @@
 
       section('Preferences');
       addRow('Sort order', SORT_LABELS[HAStore.getPref('sortMode', 'smart')], 'sort');
-      addRow('Theme', HAStore.getPref('theme', 'light') === 'light' ? 'Light' : 'Dark', 'theme');
+      addRow('Theme', HAStore.getPref('theme', 'dark') === 'light' ? 'Light' : 'Dark', 'theme');
       addRow('Show diagnostics', HAStore.getPref('showDiagnostics', false) ? 'On' : 'Off', 'diag');
 
       section('Connection');
@@ -69,7 +69,7 @@
           HAStore.setPref('showDiagnostics', !HAStore.getPref('showDiagnostics', false));
           build();
           break;
-        case 'reconnect': app.reconnect(); app.toast('Reconnecting...', 1200); break;
+        case 'reconnect': app.reconnect(); app.toast('Reconnecting\u2026', 1200); break;
         case 'edit': app.go('setup'); break;
         case 'signout': confirmSignOut(); break;
       }

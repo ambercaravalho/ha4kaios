@@ -53,19 +53,36 @@
         return;
       }
 
+      // Controls live in a titled card; read-only display controls (e.g. a
+      // climate's current temperature) are appended here too.
+      var controlsWrap = document.createElement('div');
+      controlsWrap.className = 'control-group';
+
       HADomains.build({
         entityId: entityId,
         entity: entity,
-        makeControl: function (label, initial) { return makeControl(wrap, label, initial); },
+        makeControl: function (label, initial) { return makeControl(controlsWrap, label, initial); },
         addControl: function (desc) { controls.push(desc); },
         svc: svc
       });
 
-      buildAttributes(wrap, e);
+      if (controlsWrap.children && controlsWrap.children.length) {
+        container.appendChild(makeSection('Controls'));
+        container.appendChild(controlsWrap);
+      }
+
+      buildAttributes(container, e);
 
       focusIndex = 0;
       applyFocus();
       updateSoftkeys();
+    }
+
+    function makeSection(text) {
+      var s = document.createElement('div');
+      s.className = 'section';
+      s.textContent = text;
+      return s;
     }
 
     function makeControl(parent, label, initial) {
@@ -83,29 +100,41 @@
       return { el: el, valueEl: v };
     }
 
-    function buildAttributes(wrap, e) {
-      var section = document.createElement('div');
-      section.className = 'section';
-      section.textContent = 'Attributes';
-      container.appendChild(section);
+    // Attributes that are internal, shown elsewhere, or just noise on a small
+    // screen. Hidden from the human-facing attribute list.
+    var ATTR_HIDE = {
+      friendly_name: 1, supported_features: 1, icon: 1, entity_picture: 1,
+      assumed_state: 1, restored: 1, editable: 1, attribution: 1,
+      device_class: 1, state_class: 1, id: 1
+    };
 
+    function humanizeKey(key) {
+      return HAFmt.capitalize(key);
+    }
+
+    function buildAttributes(parent, e) {
       var attrs = e.attributes || {};
       var keys = [];
-      for (var k in attrs) { if (attrs.hasOwnProperty(k)) keys.push(k); }
+      for (var k in attrs) {
+        if (attrs.hasOwnProperty(k) && !ATTR_HIDE[k]) keys.push(k);
+      }
       keys.sort();
+      if (!keys.length) return;
+
+      parent.appendChild(makeSection('Attributes'));
 
       for (var i = 0; i < keys.length; i++) {
         var row = document.createElement('div');
         row.className = 'attr';
         var kk = document.createElement('span');
         kk.className = 'attr-key';
-        kk.textContent = keys[i];
+        kk.textContent = humanizeKey(keys[i]);
         var vv = document.createElement('span');
         vv.className = 'attr-val';
         vv.textContent = formatAttr(attrs[keys[i]]);
         row.appendChild(kk);
         row.appendChild(vv);
-        container.appendChild(row);
+        parent.appendChild(row);
       }
     }
 
@@ -123,7 +152,7 @@
         controls[i].el.className = (i === focusIndex) ? 'control focused' : 'control';
       }
       var cur = controls[focusIndex];
-      if (cur && cur.el.scrollIntoView) cur.el.scrollIntoView(false);
+      if (cur) HANav.scrollIntoViewIfNeeded(cur.el);
     }
 
     // Scroll the main content area (used to reach read-only content such as the
@@ -133,15 +162,46 @@
       if (main) main.scrollTop += delta;
     }
 
+    function atPageBottom() {
+      var main = document.getElementById('main');
+      if (!main) return true;
+      return main.scrollTop + main.clientHeight >= main.scrollHeight - 1;
+    }
+
+    // True when the page has been scrolled down past the focused control (its
+    // top is above the viewport), i.e. we're reading the attributes below.
+    function scrolledPast(el) {
+      var main = document.getElementById('main');
+      return !!(main && el && main.scrollTop > el.offsetTop);
+    }
+
     function move(delta) {
       // No controls (e.g. a sensor): Up/Down just scroll the page.
       if (!controls.length) { scrollMain(delta * 40); return; }
-      var next = focusIndex + delta;
-      if (next < 0) next = 0;
-      if (next > controls.length - 1) next = controls.length - 1;
-      // At the first/last control: keep scrolling so attributes stay reachable.
-      if (next === focusIndex) { scrollMain(delta * 40); return; }
-      focusIndex = next;
+
+      var curEl = controls[focusIndex].el;
+
+      if (delta > 0) {
+        // At the last control, keep scrolling down so attributes stay reachable
+        // without yanking focus back up.
+        if (focusIndex === controls.length - 1) {
+          if (!atPageBottom()) scrollMain(40);
+          return;
+        }
+        focusIndex += 1;
+        applyFocus();
+        updateSoftkeys();
+        return;
+      }
+
+      // Up: if we scrolled below the focused control to read attributes, ease
+      // back up toward it before moving the selection.
+      if (!HANav.isFullyVisible(curEl) && scrolledPast(curEl)) {
+        scrollMain(-40);
+        return;
+      }
+      if (focusIndex === 0) { scrollMain(-40); return; }
+      focusIndex -= 1;
       applyFocus();
       updateSoftkeys();
     }

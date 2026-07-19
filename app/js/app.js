@@ -54,11 +54,19 @@
 
   function setStatusIndicator(info) {
     var status = info.status;
-    var label = status;
-    if (status === 'online' && info.usingRest) label = 'rest';
+    var cls, label;
+    if (status === 'online') {
+      cls = 'online';
+      label = info.usingRest ? 'REST' : 'Live';
+    } else if (status === 'connecting') {
+      cls = 'connecting';
+      label = 'Sync';
+    } else {
+      cls = 'offline';
+      label = 'Off';
+    }
     els.status.textContent = label;
-    els.status.className = 'status status-' +
-      (status === 'online' ? 'online' : (status === 'connecting' ? 'connecting' : 'offline'));
+    els.status.className = 'status status-' + cls;
   }
 
   function toast(msg, ms) {
@@ -81,7 +89,8 @@
 
   /* ---- theme ---- */
   function applyTheme() {
-    var t = HAStore.getPref('theme', 'light');
+    // Dark is the default: it matches the base :root token set (no body class).
+    var t = HAStore.getPref('theme', 'dark');
     document.body.className = (t === 'light') ? 'theme-light' : '';
   }
   function setTheme(t) { HAStore.setPref('theme', t); applyTheme(); }
@@ -108,7 +117,16 @@
     if (entry.state && currentView.restoreState) {
       try { currentView.restoreState(entry.state); } catch (e) {}
     }
+    retriggerViewAnim();
     HAStore.setPref('lastScreen', { name: entry.name, params: entry.params || {} });
+  }
+
+  // Restart the screen-entry animation by re-adding the class after a reflow.
+  function retriggerViewAnim() {
+    if (!els.view) return;
+    els.view.className = 'view';
+    void els.view.offsetWidth;
+    els.view.className = 'view view-in';
   }
 
   function go(name, params, opts) {
@@ -184,6 +202,8 @@
   function boot() {
     cacheEls();
     applyTheme();
+    var brand = document.getElementById('header-brand');
+    if (brand && global.HAIcons) brand.appendChild(HAIcons.svg('home'));
     HANav.attach(onKey);
 
     var cfg = HAConfig.load();

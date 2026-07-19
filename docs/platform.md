@@ -108,6 +108,27 @@ the DOM small, avoid heavy per-frame work, and downscale camera frames. Softkey 
 D-pad key names (`SoftLeft`, `SoftRight`, `Enter`, `Arrow*`, `Backspace`,
 `EndCall`) are unchanged across versions.
 
+## Release test checklist
+
+Before shipping a build, smoke-test at 240x320 (old Firefox / KaiOS simulator,
+then hardware for camera):
+
+- **Both themes**: toggle Dark (default) and Light in Settings; confirm header,
+  status pill, rows, chips, and the setup buttons all recolor correctly.
+- **Connection states**: online (`Live`), REST fallback (`REST`), reconnecting
+  (`Sync`), and offline (`Off`) - the header pill and Home card wording match,
+  and Home offers `Reconnect` when offline.
+- **Setup**: URL/token entry, `Scan token QR`, and the primary `Connect` button;
+  no stray drill-in chevrons and no redundant softkeys.
+- **Search**: `Search devices` jumps into the All-devices search box.
+- **List wrap**: down past the last row wraps to the first (and vice versa).
+- **Detail**: controls render in the card; attributes are humanized and free of
+  internal keys; Fav/Unfav works.
+- **Lists**: Favorites reorder, device collapsing, number-key jumps, and marquee
+  on long names.
+- **Build**: `./build/build.sh` produces both zips with the correct manifest at
+  the root.
+
 ## Troubleshooting QR
 
 - **"Camera permission denied"** - accept the prompt on first scan; if it

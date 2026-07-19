@@ -29,7 +29,7 @@
         var msg = document.createElement('div');
         msg.className = 'message';
         msg.textContent = c.authenticated
-          ? 'Areas need Home Assistant registries (loading)...'
+          ? 'Loading areas\u2026'
           : 'Areas are only available over WebSocket.';
         container.appendChild(msg);
         app.setSoftkeys('Back', '', '');

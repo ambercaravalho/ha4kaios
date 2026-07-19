@@ -2,19 +2,19 @@
   "id": "ha4kaios",
   "name": "HA4KaiOS",
   "short_name": "HA4KaiOS",
-  "description": "Home Assistant client for KaiOS feature phones",
+  "description": "Home Assistant client for KaiOS 2.5, 3.0, 3.1, and 4.0 feature phones",
   "lang": "en-US",
   "start_url": "/index.html",
   "display": "standalone",
-  "theme_color": "#111111",
-  "background_color": "#111111",
+  "theme_color": "#0d3a5c",
+  "background_color": "#11141b",
   "icons": [
     { "src": "/icons/icon-56.png", "type": "image/png", "sizes": "56x56" },
     { "src": "/icons/icon-112.png", "type": "image/png", "sizes": "112x112" }
   ],
   "default_locale": "en-US",
   "b2g_features": {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "type": "privileged",
     "origin": "ha4kaios",
     "developer": {

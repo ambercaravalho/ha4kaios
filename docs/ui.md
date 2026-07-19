@@ -3,7 +3,8 @@
 Built for a ~240x320 non-touch screen driven by a D-pad and three softkeys.
 Navigation is a back-stack: **Back** returns to the previous screen and **Home**
 is the root (Back there does nothing). The last top-level screen is restored on
-next launch.
+next launch. List selection wraps: moving down past the last row returns to the
+first, and up past the first goes to the last.
 
 ## Controls
 
@@ -34,9 +35,10 @@ flowchart TD
   All --> Detail
 ```
 
-- **Home** - connection/last-updated card plus Favorites, Areas, Scenes,
-  Automations, and All devices. Left softkey opens Settings; when offline the
-  right softkey is `Reconnect`.
+- **Home** - connection/last-updated card, then Favorites, Areas, Scenes,
+  Automations, and All devices. Left softkey opens Settings; the right softkey is
+  `Search` (jumps straight into the All-devices search box), or `Reconnect` when
+  offline (the card then explains how to retry).
 - **Areas** - HA areas (plus `Unassigned`), each split into Scenes, Automations,
   and Entities. Requires WebSocket; on REST fallback the All screen groups by
   domain instead.
@@ -68,7 +70,9 @@ while searching or reordering.
 - **Favorites**: add/remove from the detail screen's right softkey; reorder from
   the Favorites list (`Reorder`, then Up/Down, Done). Stored locally in
   `localStorage`, independent of HA.
-- **Themes**: Dark / Light in Settings; remembered.
+- **Themes**: Dark (default) / Light in Settings; remembered. The header is
+  themed to match, and the connection state shows as a labelled pill (`Live` /
+  `REST` / `Sync` / `Off`) rather than a bare dot.
 
 ## Token QR scan
 
@@ -79,9 +83,14 @@ times per second, and on a hit the token fills the field and focus moves to
 
 ## Visual style
 
-Follows the [KaiOS design guide](https://developer.kaiostech.com/docs/design-guide/ui-component):
-Open Sans type scale (17/14/12px), 60px list items, centered header, standard
-softkey bar, HA-blue focus highlight. Sizes are fixed px (rem is avoided because
-on-device font inflation can rebase it; `text-size-adjust` disables auto-inflation).
-All colors are CSS variables in [app/css/app.css](../app/css/app.css), so themes
-are just variable overrides.
+Based on the [KaiOS design guide](https://developer.kaiostech.com/docs/design-guide/ui-component)
+with tasteful HA-branded departures: Open Sans type scale (17/14/12px), 60px list
+items, centered header with a small brand mark, standard softkey bar, HA-blue
+focus highlight. A single blue hue family spans the accent and header, and entity
+rows use semantic state colors - the glyph badge and value chip light up by state
+(muted when off, accent when active, amber when on) and unavailable rows dim.
+Screen entry, the toast, and focus highlights animate with short, transform/opacity
+transitions (Gecko-48-safe). Sizes are fixed px (rem is avoided because on-device
+font inflation can rebase it; `text-size-adjust` disables auto-inflation). All
+colors are CSS variables in [app/css/app.css](../app/css/app.css), so themes are
+just variable overrides.
