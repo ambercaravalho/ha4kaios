@@ -1,9 +1,9 @@
 # UI guide
 
-The app is built for a ~240x320 non-touch screen driven by a D-pad and three
-softkeys. Navigation uses a back-stack: **Back** returns to the previous screen,
-and **Home** is the root (Back there does nothing, so you never exit by
-accident). The last top-level screen you visited is restored on the next launch.
+Built for a ~240x320 non-touch screen driven by a D-pad and three softkeys.
+Navigation is a back-stack: **Back** returns to the previous screen and **Home**
+is the root (Back there does nothing). The last top-level screen is restored on
+next launch.
 
 ## Controls
 
@@ -34,83 +34,54 @@ flowchart TD
   All --> Detail
 ```
 
-- **Home** - a connection/last-updated card plus logically grouped entries:
-  Favorites, Areas, Scenes, Automations, and All devices. The left softkey opens
-  **Settings**; when offline, the right softkey is `Reconnect`.
-- **Favorites** - your local dashboard. Reorder via the right softkey
-  (`Reorder`), then Up/Down to move and Done to finish.
-- **Scenes** / **Automations** - dedicated lists of just your scenes and
-  automations, so the common "activate a scene / run an automation" flow is one
-  step from Home.
-- **Areas** - areas from Home Assistant (plus `Unassigned`), each opening its
-  entity list split into `Scenes`, `Automations`, and `Entities` sections. Areas
-  require the WebSocket connection; on REST fallback the All screen groups by
+- **Home** - connection/last-updated card plus Favorites, Areas, Scenes,
+  Automations, and All devices. Left softkey opens Settings; when offline the
+  right softkey is `Reconnect`.
+- **Areas** - HA areas (plus `Unassigned`), each split into Scenes, Automations,
+  and Entities. Requires WebSocket; on REST fallback the All screen groups by
   domain instead.
 - **All devices** - every entity, grouped by area (or domain), with search.
-- **Detail** - per-entity controls; the right softkey toggles favorite.
+- **Scenes / Automations** - dedicated lists so activating one is a step from
+  Home.
+- **Detail** - per-entity controls; right softkey toggles favorite.
 
-Every row shows a small purpose glyph (an inline SVG icon reflecting the domain,
-e.g. a bulb for lights or a lock for locks) in place of a text badge.
+Every row shows an inline-SVG domain glyph (e.g. a bulb for lights) in place of a
+text badge.
 
-## Device grouping
+## Lists and device grouping
 
-When Home Assistant registries are available, entities that belong to the same
-device (for example the five entities of an "Entry Door Lock") collapse into a
-single device row showing the device name, an entity count, and a `>` chevron.
-Selecting it drills into a sub-screen listing just that device's entities.
-Devices with only one visible entity, and entities with no device, appear as
-normal rows. Collapsing applies to Areas, All devices, and Favorites, and is
-automatically suppressed while searching or reordering so those operate on
-individual entities.
+All lists (Favorites, Scenes, Automations, Area/Device entities, All) share one
+component using the keys above. When HA registries are available, entities of the
+same device collapse into a single device row (name, count, `>` chevron) that
+drills into a sub-screen; single-entity and device-less entities stay as normal
+rows. Collapsing applies to Areas, All devices, and Favorites, and is suppressed
+while searching or reordering.
 
-## Lists
+## Search, sorting, favorites, themes
 
-Every list (Favorites, Scenes, Automations, Area entities, Device entities, All)
-shares one component with the keys in [Controls](#controls) above.
+- **Search** (All devices): from the top row press Up to focus the search box;
+  type to filter by name or entity id; Down/Enter returns to the list, right
+  softkey (`Clear`) resets.
+- **Sort** (Settings -> Sort order): **Smart** (default: controllable first,
+  then active, then domain priority, then name), **Name**, or **Status**. Hidden
+  and (unless Show diagnostics is on) diagnostic entities are omitted.
+- **Favorites**: add/remove from the detail screen's right softkey; reorder from
+  the Favorites list (`Reorder`, then Up/Down, Done). Stored locally in
+  `localStorage`, independent of HA.
+- **Themes**: Dark / Light in Settings; remembered.
 
-The right softkey opens the focused entity's **Details** screen. On the
-Favorites list it instead reads `Reorder` and enters reorder mode. A collapsed
-device row has no Details, so the right softkey is blank there; Center / Enter
-opens the device's entity sub-screen. Add or remove favorites from the Details
-screen's right softkey (`Fav` / `Unfav`).
+## Token QR scan
 
-## Search (All devices)
-
-From the top row press **Up** to focus the search box; type to filter by name or
-entity id. Press **Down** or **Enter** to return to the list, or the right
-softkey (`Clear`) to reset.
-
-## Sorting and filtering
-
-Set the sort mode in **Settings -> Sort order**:
-
-- **Smart** (default) - controllable entities first, then active/on, then a
-  domain priority, then name.
-- **Name** - alphabetical.
-- **Status** - active/on first, then name.
-
-Hidden entities and, unless **Show diagnostics** is enabled, config/diagnostic
-entities are omitted from smart/sorted lists.
-
-## Favorites
-
-Add or remove favorites from the detail screen's right softkey (`Fav` /
-`Unfav`). Favorites are stored locally on the device (in `localStorage`),
-independent of Home Assistant, and keep the order you set.
-
-## Themes
-
-Switch between **Dark** and **Light** in Settings; the choice is remembered.
+In setup, select **Scan token QR**: the camera opens, frames are decoded a few
+times per second, and on a hit the token fills the field and focus moves to
+**Connect**. A softkey or Backspace cancels. Camera/permission details are in
+[Platform](platform.md#camera).
 
 ## Visual style
 
-The styling follows the [KaiOS design guide](https://developer.kaiostech.com/docs/design-guide/ui-component)
-and KaiUI conventions: the Open Sans type scale (primary 17px / secondary 14px /
-tertiary 12px), 60px list items, a centered header title (Regular/400), and the
-standard light-gray softkey bar. Selection uses
-the Home Assistant blue accent as the focus highlight. Sizes are fixed px (the
-KaiOS spec is defined in rem against a 10px root, but on-device Gecko font
-inflation can rebase rem and blow up the layout, so px keeps it deterministic;
-text auto-inflation is disabled via `text-size-adjust`). All colors are CSS
-variables in [app/css/app.css](../app/css/app.css), so the light (default) and
-dark themes are just variable overrides.
+Follows the [KaiOS design guide](https://developer.kaiostech.com/docs/design-guide/ui-component):
+Open Sans type scale (17/14/12px), 60px list items, centered header, standard
+softkey bar, HA-blue focus highlight. Sizes are fixed px (rem is avoided because
+on-device font inflation can rebase it; `text-size-adjust` disables auto-inflation).
+All colors are CSS variables in [app/css/app.css](../app/css/app.css), so themes
+are just variable overrides.
